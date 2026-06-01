@@ -310,24 +310,53 @@ window.addEventListener("appinstalled",function(){
 
 <!-- SEITE 3: EINSTELLUNGEN -->
 <div class="page" id="pageSettings">
-  <h1>&#9881; Einstellungen</h1>
-  <p class="subtitle">Bandname &#228;ndern, Songs verwalten und neue Songs hinzuf&#252;gen.</p>
-  <div class="settings-card">
+  <h1>&#9881; Einstellungen <span id="adminBadge" style="display:none"></span></h1>
+  <p class="subtitle" id="settingsSubtitle">Lade...</p>
+
+  <!-- Sync Status Bar -->
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#e8f4fd;border-radius:8px;margin-bottom:12px;font-size:12px;color:#555">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncLabel">Verbinde mit Band-Server...</span>
+    <button class="btn" style="font-size:11px;padding:4px 10px;margin-left:auto" onclick="syncFromCloud()">&#8635; Aktualisieren</button>
+  </div>
+
+  <!-- Admin Login -->
+  <div class="settings-card" id="adminLoginCard">
+    <h3 style="text-align:center">&#128274; Admin-Zugang</h3>
+    <p style="font-size:13px;color:#888;text-align:center;margin-bottom:14px">Passwort eingeben um Songs und Texte zu bearbeiten</p>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <input type="password" class="field" id="adminPwInput" placeholder="Passwort..." style="max-width:200px" onkeydown="if(event.key==='Enter')checkAdminPw()">
+      <button class="btn primary" onclick="checkAdminPw()">Einloggen</button>
+    </div>
+    <p id="adminPwError" style="color:#c00;font-size:12px;margin-top:8px;text-align:center;display:none">Falsches Passwort</p>
+  </div>
+
+  <!-- Bandname (nur Admin) -->
+  <div class="settings-card" id="cardBandname" style="display:none">
     <h3>&#127928; Bandname</h3>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <input type="text" class="field" id="bandNameInput" placeholder="Bandname eingeben..." style="flex:1;min-width:160px">
       <button class="btn primary" onclick="saveBandName()">Speichern</button>
     </div>
   </div>
-  <div class="settings-card">
+
+  <!-- Songs (nur Admin) -->
+  <div class="settings-card" id="cardSongs" style="display:none">
     <h3>&#127925; Songs verwalten</h3>
     <div id="songEditList"><p style="color:#aaa;font-size:13px">Wird geladen...</p></div>
     <div class="btn-row" style="margin-top:12px">
       <button class="btn primary" onclick="openAddSong()">+ Neuer Song</button>
     </div>
   </div>
-</div>
 
+  <!-- Admin Aktionen -->
+  <div id="cardLogout" style="display:none;margin-top:8px">
+    <div class="btn-row">
+      <button class="btn primary" onclick="pushToCloud()">&#9729; Alles in Cloud speichern</button>
+      <button class="btn reset" onclick="adminLogout()">&#128275; Ausloggen</button>
+    </div>
+  </div>
+</div>
 <!-- Modal: Song bearbeiten/neu -->
 <div class="modal-overlay" id="songModal">
   <div class="modal">
