@@ -186,6 +186,15 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
     .lyrics-editor{min-height:380px}
     .teleprompter-inner{font-size:18px}
   }
+
+  /* ADMIN */
+  .admin-badge{background:#378ADD;color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:3px 8px;margin-left:8px;vertical-align:middle}
+  .readonly-badge{background:#888;color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:3px 8px;margin-left:8px;vertical-align:middle}
+  .sync-dot{width:9px;height:9px;border-radius:50%;background:#ccc;flex-shrink:0;display:inline-block}
+  .sync-dot.ok{background:#4CAF50}
+  .sync-dot.err{background:#f44336}
+  .sync-dot.loading{background:#f0a800;animation:syncpulse 0.8s infinite}
+  @keyframes syncpulse{0%,100%{opacity:1}50%{opacity:.2}}
 </style>
 </head>
 <body>
