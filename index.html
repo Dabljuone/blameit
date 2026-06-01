@@ -135,23 +135,57 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
 .instr-check{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
-/* MIDI */
-.midi-bar{display:flex;align-items:center;gap:10px;background:#fff;border-radius:8px;padding:10px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-wrap:wrap}
-.midi-dot{width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;transition:background .3s}
-.midi-dot.connected{background:#4CAF50}
-.midi-dot.error{background:#f44336}
-.midi-label{font-size:12px;color:#555;flex:1}
-.midi-select{border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:12px;font-family:Arial,sans-serif;background:#fafafa;max-width:180px}
-.midi-ch-row{display:flex;align-items:center;gap:6px;margin-top:4px}
-.midi-ch-label{font-size:11px;color:#888}
-.midi-ch-sel{border:1px solid #ddd;border-radius:5px;padding:3px 6px;font-size:12px;font-family:Arial,sans-serif;background:#fafafa;width:60px}
-.pc-input{width:52px;border:1px solid #ddd;border-radius:5px;padding:4px 6px;font-size:12px;font-family:Arial,sans-serif;text-align:center;background:#fafafa}
-.pc-input:focus{outline:none;border-color:#7B4FBF;background:#fff}
-.pc-send-btn{background:#7B4FBF;color:#fff;border:none;border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap}
-.pc-send-btn:hover{background:#5a3490}
-.pc-send-btn:active{background:#3d2160;transform:scale(.97)}
-.pc-sent{background:#4CAF50!important}
+
 @media(max-width:500px){.form-row{grid-template-columns:1fr}.setlist-table th:nth-child(1),.setlist-table td:nth-child(1){display:none}}
+
+  /* SONGTEXTE - Split Layout */
+  .lyrics-layout{display:flex;gap:0;height:calc(100vh - 105px);min-height:400px}
+  .lyrics-songlist{width:220px;flex-shrink:0;border-right:1px solid #e0e0e0;overflow-y:auto;background:#fff}
+  .lyrics-song-item{padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .12s;position:relative}
+  .lyrics-song-item:hover{background:#f0f7ff}
+  .lyrics-song-item.active{background:#e8f1fb;border-left:3px solid #378ADD}
+  .lyrics-song-item.has-text .lsi-title::after{content:' ✓';color:#4CAF50;font-weight:700}
+  .lsi-num{font-size:10px;color:#bbb}
+  .lsi-title{font-size:13px;font-weight:600;color:#222;margin-top:1px}
+  .lsi-artist{font-size:11px;color:#888;margin-top:1px}
+  .lyrics-editor{flex:1;display:flex;flex-direction:column;background:#111;overflow:hidden}
+  .lyrics-editor-header{padding:10px 14px;background:#1a1a2e;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:10px;flex-wrap:wrap}
+  .lyrics-editor-title{font-size:15px;font-weight:600}
+  .lyrics-editor-sub{font-size:11px;color:#aaa}
+  .lyrics-editor-empty{flex:1;display:flex;align-items:center;justify-content:center;color:#555;font-size:14px;text-align:center;padding:2rem;background:#111}
+  /* Metronom */
+  .metro-bar{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .metro-bpm-inp{width:58px;background:#2a2a3a;border:1px solid #444;border-radius:6px;padding:4px 7px;font-size:13px;color:#fff;font-family:Arial,sans-serif;text-align:center}
+  .metro-bpm-inp:focus{outline:none;border-color:#378ADD}
+  .metro-bpm-label{font-size:11px;color:#888}
+  .metro-btn{width:36px;height:36px;border-radius:50%;border:2px solid #378ADD;background:none;color:#378ADD;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;flex-shrink:0}
+  .metro-btn:hover{background:#378ADD;color:#fff}
+  .metro-btn.running{background:#e53935;border-color:#e53935;color:#fff}
+  .metro-beat{width:12px;height:12px;border-radius:50%;background:#444;flex-shrink:0;transition:background .05s}
+  .metro-beat.on{background:#fff;box-shadow:0 0 8px #fff}
+  /* Teleprompter */
+  .teleprompter{flex:1;overflow-y:scroll;overflow-x:hidden;position:relative;cursor:grab;scroll-behavior:auto}
+  .teleprompter:active{cursor:grabbing}
+  .teleprompter-inner{padding:50vh 28px 60vh 28px;font-size:22px;line-height:1.8;color:#fff;font-family:Arial,sans-serif;white-space:pre-wrap;word-break:break-word}
+  .teleprompter-fade{position:sticky;bottom:0;left:0;right:0;height:70px;background:linear-gradient(transparent,#111);pointer-events:none;margin-top:-70px}
+  .teleprompter-fade-top{position:sticky;top:0;left:0;right:0;height:50px;background:linear-gradient(#111,transparent);pointer-events:none;margin-bottom:-50px;z-index:1}
+  /* Edit mode */
+  .lyrics-textarea{flex:1;width:100%;border:none;padding:16px 20px;font-size:14px;font-family:'Courier New',monospace;line-height:1.7;resize:none;background:#1a1a1a;color:#ddd;outline:none}
+  .lyrics-textarea:focus{background:#1e1e1e}
+  .lyrics-editor-footer{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid #2a2a2a;background:#1a1a2e;flex-shrink:0}
+  .lyrics-char-count{font-size:11px;color:#aaa;flex:1}
+  .mode-btn{background:none;border:1px solid #555;color:#aaa;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:Arial,sans-serif}
+  .mode-btn.active{background:#378ADD;border-color:#378ADD;color:#fff}
+  /* Speed control */
+  .speed-row{display:flex;align-items:center;gap:6px}
+  .speed-label{font-size:11px;color:#888}
+  .speed-inp{width:44px;background:#2a2a3a;border:1px solid #444;border-radius:5px;padding:3px 5px;font-size:12px;color:#fff;font-family:Arial,sans-serif;text-align:center}
+  @media(max-width:500px){
+    .lyrics-layout{flex-direction:column;height:auto}
+    .lyrics-songlist{width:100%;height:160px;border-right:none;border-bottom:1px solid #333}
+    .lyrics-editor{min-height:380px}
+    .teleprompter-inner{font-size:18px}
+  }
 </style>
 </head>
 <body>
@@ -189,6 +223,7 @@ window.addEventListener("appinstalled",function(){
   <button class="nav-btn active" id="navTermin" onclick="showPage('termin')">&#128197; Termin</button>
   <button class="nav-btn" id="navSetlist" onclick="showPage('setlist')">&#127926; Setliste</button>
   <button class="nav-btn" id="navSettings" onclick="showPage('settings')">&#9881; Einstellungen</button>
+  <button class="nav-btn" id="navLyrics" onclick="showPage('lyrics')">&#127908; Songtexte</button>
 </div>
 
 <!-- SEITE 1: TERMINPLANER -->
@@ -247,39 +282,12 @@ window.addEventListener("appinstalled",function(){
   <div class="setlist-header">
     <input type="text" class="set-name-input" id="setName" placeholder="Name der Setliste (z.B. Auftritt Stadtfest)">
   </div>
-  <!-- MIDI Bar -->
-  <div class="midi-bar" id="midiBar">
-    <div class="midi-dot" id="midiDot"></div>
-    <div class="midi-label" id="midiLabel">MIDI: nicht verbunden</div>
-    <button class="btn" style="font-size:12px;padding:5px 10px" onclick="connectMIDI()">Verbinden</button>
-  </div>
-  <div class="midi-bar" id="midiSettings" style="display:none;gap:14px">
-    <div>
-      <div style="font-size:11px;color:#888;margin-bottom:3px">MIDI Ausgang</div>
-      <select class="midi-select" id="midiOutSelect" onchange="selectMidiOut()">
-        <option value="">-- Ger&#228;t w&#228;hlen --</option>
-      </select>
-    </div>
-    <div>
-      <div style="font-size:11px;color:#888;margin-bottom:3px">Standard Kanal</div>
-      <select class="midi-ch-sel" id="midiChGlobal">
-        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-        <option value="13">13</option><option value="14">14</option><option value="15">15</option>
-        <option value="16">16</option>
-      </select>
-    </div>
-  </div>
-
   <table class="setlist-table" id="setlistTable">
     <thead><tr>
       <th style="width:26px"></th>
       <th class="center" style="width:32px">#</th>
       <th>Song</th>
       <th class="center">Dauer (min:sek)</th>
-      <th class="center" style="width:90px">PC / Kanal</th>
       <th style="width:32px"></th>
     </tr></thead>
     <tbody id="setlistBody">
@@ -396,11 +404,12 @@ function saveData() {
 
 // ── NAVIGATION ──
 function showPage(page) {
-  ['Termin','Setlist','Settings'].forEach(function(p) {
+  ['Termin','Setlist','Settings','Lyrics'].forEach(function(p) {
     var pg = document.getElementById('page'+p); if (pg) pg.classList.toggle('active', p.toLowerCase()===page);
     var nv = document.getElementById('nav'+p);  if (nv) nv.classList.toggle('active', p.toLowerCase()===page);
   });
   if (page === 'settings') renderSettingsPage();
+  if (page === 'lyrics') renderLyricsPage();
 }
 
 function pad(n) { return String(n).padStart(2,'0'); }
@@ -555,36 +564,10 @@ function renderSetlist(){
       input.addEventListener('blur',function(){var raw=input.value.trim();if(raw&&raw.indexOf(':')===-1&&raw.indexOf('.')===-1){var v=parseInt(raw);if(!isNaN(v)){input.value=(v>99)?Math.floor(v/100)+':'+pad(v%100):v+':00';}}setlist[i].dur=input.value;updateTotal();if(!isPause&&item.n){var pi=document.getElementById('pdur-'+item.n);if(pi)pi.value=input.value;}});
     })(idx,inp);
     tdDur.appendChild(inp);
-    // PC / Kanal cell
-    var tdPC=document.createElement('td');tdPC.style.cssText='width:90px;text-align:center;vertical-align:middle';
-    if(!isPause){
-      var midi=item.midi||(item.midi={pc:'',ch:''});
-      var pcWrap=document.createElement('div');pcWrap.style.cssText='display:flex;flex-direction:column;gap:3px;align-items:center';
-      var pcRow=document.createElement('div');pcRow.style.cssText='display:flex;align-items:center;gap:3px';
-      var pcLbl=document.createElement('span');pcLbl.textContent='PC:';pcLbl.style.cssText='font-size:10px;color:#aaa';
-      var pcInp=document.createElement('input');pcInp.type='number';pcInp.className='pc-input';pcInp.placeholder='0-127';pcInp.min='0';pcInp.max='127';pcInp.value=midi.pc;
-      (function(i,inp){inp.addEventListener('input',function(){setlist[i].midi.pc=inp.value;});inp.addEventListener('click',function(e){e.stopPropagation();});})(idx,pcInp);
-      var chLbl=document.createElement('span');chLbl.textContent='CH:';chLbl.style.cssText='font-size:10px;color:#aaa';
-      var chInp=document.createElement('input');chInp.type='number';chInp.className='pc-input';chInp.placeholder='1-16';chInp.min='1';chInp.max='16';chInp.value=midi.ch;
-      (function(i,inp){inp.addEventListener('input',function(){setlist[i].midi.ch=inp.value;});inp.addEventListener('click',function(e){e.stopPropagation();});})(idx,chInp);
-      var sendBtn=document.createElement('button');sendBtn.className='pc-send-btn';sendBtn.textContent='\u25B6 Send';
-      (function(pcI,chI,btn){sendBtn.addEventListener('click',function(e){
-        e.stopPropagation();
-        var pc=parseInt(pcI.value);
-        var ch=parseInt(chI.value)||parseInt(document.getElementById('midiChGlobal').value)||1;
-        sendPC(pc,ch,btn);
-      });})(pcInp,chInp,sendBtn);
-      pcRow.appendChild(pcLbl);pcRow.appendChild(pcInp);pcRow.appendChild(chLbl);pcRow.appendChild(chInp);
-      pcWrap.appendChild(pcRow);pcWrap.appendChild(sendBtn);
-      tdPC.appendChild(pcWrap);
-    } else {
-      tdPC.textContent='-';tdPC.style.color='#ccc';
-    }
-
     var tdRm=document.createElement('td');tdRm.className='remove';var rmBtn=document.createElement('button');rmBtn.className='remove-btn';rmBtn.textContent='\u2715';
     (function(i){rmBtn.addEventListener('click',function(){removeFromSetlist(i);});})(idx);
     tdRm.appendChild(rmBtn);
-    tr.appendChild(tdDrag);tr.appendChild(tdPos);tr.appendChild(tdInfo);tr.appendChild(tdDur);tr.appendChild(tdPC);tr.appendChild(tdRm);tbody.appendChild(tr);
+    tr.appendChild(tdDrag);tr.appendChild(tdPos);tr.appendChild(tdInfo);tr.appendChild(tdDur);tr.appendChild(tdRm);tbody.appendChild(tr);
     if(!isPause)totalSecs+=parseDur(item.dur);
   });
   var sc=setlist.filter(function(i){return!i.pause;}).length;
@@ -676,74 +659,416 @@ document.addEventListener('DOMContentLoaded',function(){
   var m=document.getElementById('songModal');
   if(m)m.addEventListener('click',function(e){if(e.target===this)closeModal();});
 });
-// ── MIDI ──
-var midiAccess = null;
-var midiOut = null;
 
-function connectMIDI() {
-  if (!navigator.requestMIDIAccess) {
-    document.getElementById('midiDot').className = 'midi-dot error';
-    document.getElementById('midiLabel').textContent = 'Web MIDI wird von diesem Browser nicht unterstützt. Bitte "Web MIDI Browser" App verwenden.';
-    return;
-  }
-  navigator.requestMIDIAccess({sysex: false}).then(function(access) {
-    midiAccess = access;
-    document.getElementById('midiDot').className = 'midi-dot connected';
-    document.getElementById('midiLabel').textContent = 'MIDI verbunden';
-    document.getElementById('midiSettings').style.display = 'flex';
-    populateMidiOutputs();
-    midiAccess.onstatechange = function() { populateMidiOutputs(); };
-  }, function(err) {
-    document.getElementById('midiDot').className = 'midi-dot error';
-    document.getElementById('midiLabel').textContent = 'MIDI Zugriff verweigert: ' + err.message;
+// ── EINSTELLUNGEN ──
+function renderSettingsPage(){
+  var bi=document.getElementById('bandNameInput');if(bi)bi.value=bandName;
+  var list=document.getElementById('songEditList');if(!list)return;
+  list.innerHTML='';
+  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden.</p>';return;}
+  songs.forEach(function(s,idx){
+    var row=document.createElement('div');row.className='song-edit-row';
+    var num=document.createElement('div');num.className='song-edit-num';num.textContent=idx+1;
+    var info=document.createElement('div');info.className='song-edit-info';
+    var t=document.createElement('div');t.className='song-edit-title';t.textContent=s.t;
+    var a=document.createElement('div');a.className='song-edit-artist';a.textContent=s.a;
+    info.appendChild(t);info.appendChild(a);
+    var eb=document.createElement('button');eb.className='edit-btn';eb.textContent='\u270F Bearbeiten';
+    var db=document.createElement('button');db.className='edit-btn del';db.textContent='\uD83D\uDDD1 L\u00f6schen';
+    (function(i){eb.addEventListener('click',function(){openEditSong(i);});db.addEventListener('click',function(){deleteSong(i);});})(idx);
+    row.appendChild(num);row.appendChild(info);row.appendChild(eb);row.appendChild(db);
+    list.appendChild(row);
   });
 }
 
-function populateMidiOutputs() {
-  var sel = document.getElementById('midiOutSelect');
-  var prev = sel.value;
-  sel.innerHTML = '<option value="">-- Gerät wählen --</option>';
-  if (!midiAccess) return;
-  midiAccess.outputs.forEach(function(out) {
-    var opt = document.createElement('option');
-    opt.value = out.id; opt.textContent = out.name;
-    if (out.id === prev) opt.selected = true;
-    sel.appendChild(opt);
-  });
-  // Auto-select if only one output
-  if (midiAccess.outputs.size === 1) {
-    midiAccess.outputs.forEach(function(out) { sel.value = out.id; midiOut = out; });
-    document.getElementById('midiLabel').textContent = 'MIDI: ' + sel.options[sel.selectedIndex].textContent;
-  }
+function openEditSong(idx){
+  editingSongIdx=idx;var s=songs[idx];
+  document.getElementById('modalTitle').textContent='Song bearbeiten';
+  document.getElementById('modalSongTitle').value=s.t;
+  document.getElementById('modalSongArtist').value=s.a;
+  ['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){document.getElementById('chk'+i).checked=(s.instr&&s.instr.indexOf(i)!==-1);});
+  document.getElementById('songModal').classList.add('open');
 }
-
-function selectMidiOut() {
-  var sel = document.getElementById('midiOutSelect');
-  midiOut = null;
-  if (!midiAccess || !sel.value) return;
-  midiAccess.outputs.forEach(function(out) { if (out.id === sel.value) midiOut = out; });
-  if (midiOut) document.getElementById('midiLabel').textContent = 'MIDI: ' + midiOut.name;
+function openAddSong(){
+  editingSongIdx=null;
+  document.getElementById('modalTitle').textContent='Neuer Song';
+  document.getElementById('modalSongTitle').value='';
+  document.getElementById('modalSongArtist').value='';
+  ['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){document.getElementById('chk'+i).checked=false;});
+  document.getElementById('songModal').classList.add('open');
 }
-
-function sendPC(pc, ch, btnEl) {
-  if (!midiOut) { showToast('Kein MIDI-Ausgang gewählt!'); return; }
-  if (isNaN(pc) || pc < 0 || pc > 127) { showToast('PC muss zwischen 0 und 127 liegen.'); return; }
-  var channel = (ch || 1) - 1; // 0-indexed
-  midiOut.send([0xC0 | channel, pc]);
-  showToast('PC ' + pc + ' gesendet (Kanal ' + ch + ')');
-  if (btnEl) {
-    btnEl.classList.add('pc-sent');
-    setTimeout(function(){ btnEl.classList.remove('pc-sent'); }, 800);
-  }
+function closeModal(){document.getElementById('songModal').classList.remove('open');}
+function saveModalSong(){
+  var t=document.getElementById('modalSongTitle').value.trim();
+  var a=document.getElementById('modalSongArtist').value.trim();
+  if(!t){alert('Bitte einen Titel eingeben.');return;}
+  var instr=[];['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){if(document.getElementById('chk'+i).checked)instr.push(i);});
+  if(editingSongIdx!==null){songs[editingSongIdx].t=t;songs[editingSongIdx].a=a;songs[editingSongIdx].instr=instr;}
+  else{var maxN=songs.reduce(function(m,s){return Math.max(m,s.n);},0);songs.push({n:maxN+1,t:t,a:a,instr:instr});}
+  saveData();closeModal();renderSettingsPage();rebuildGrids();
+  showToast(editingSongIdx!==null?'Song gespeichert!':'Song hinzugef\u00fcgt!');
 }
-
-function getMidiSettings(idx) {
-  // Returns {pc, ch} for a setlist item, stored in item.midi
-  var item = setlist[idx];
-  if (!item.midi) item.midi = {pc: '', ch: ''};
-  return item.midi;
+function deleteSong(idx){
+  var s=songs[idx];
+  if(!confirm('Song "'+s.t+'" wirklich l\u00f6schen?'))return;
+  songs.splice(idx,1);saveData();renderSettingsPage();rebuildGrids();showToast('Song gel\u00f6scht.');
 }
+function saveBandName(){
+  var val=document.getElementById('bandNameInput').value.trim();
+  if(!val)return;bandName=val;saveData();updatePageTitle();showToast('Bandname gespeichert!');
+}
+function showToast(msg){
+  var t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._tmr);t._tmr=setTimeout(function(){t.style.opacity='0';},2200);
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var m=document.getElementById('songModal');
+  if(m)m.addEventListener('click',function(e){if(e.target===this)closeModal();});
+});
 
 </script>
+
+<!-- SEITE 4: SONGTEXTE -->
+<div class="page" id="pageLyrics">
+  <h1>&#127908; Songtexte</h1>
+  <p class="subtitle">Song ausw&#228;hlen &#8211; Metronom oben rechts, Text scrollt automatisch.</p>
+  <div class="lyrics-layout">
+    <!-- Linke Seite: Songliste -->
+    <div class="lyrics-songlist" id="lyricsSongList"></div>
+    <!-- Rechte Seite: Editor / Teleprompter -->
+    <div class="lyrics-editor" id="lyricsEditor">
+      <!-- Header mit Titel + Metronom -->
+      <div class="lyrics-editor-header" id="lyricsEditorHeader" style="display:none">
+        <div style="flex:1;min-width:0">
+          <div class="lyrics-editor-title" id="lyricsEditorTitle"></div>
+          <div class="lyrics-editor-sub" id="lyricsEditorSub"></div>
+        </div>
+        <!-- Metronom -->
+        <div class="metro-bar" id="metroBar">
+          <div class="metro-beat" id="metroBeat"></div>
+          <span class="metro-bpm-label">BPM</span>
+          <input type="number" class="metro-bpm-inp" id="metroBpm" value="120" min="40" max="300">
+          <button class="metro-btn" id="metroBtn" onclick="toggleMetronome()" title="Metronom Start/Stop">&#9654;</button>
+        </div>
+        <!-- Modus-Buttons -->
+        <div style="display:flex;gap:4px">
+          <button class="mode-btn active" id="btnEdit" onclick="setMode('edit')">Bearbeiten</button>
+          <button class="mode-btn" id="btnTele" onclick="setMode('tele')">Teleprompter</button>
+        </div>
+      </div>
+      <!-- Leer-Zustand -->
+      <div class="lyrics-editor-empty" id="lyricsEditorEmpty">
+        &#8592; Song ausw&#228;hlen
+      </div>
+      <!-- Edit Modus -->
+      <textarea class="lyrics-textarea" id="lyricsTextarea" placeholder="Songtext hier eingeben..." style="display:none"></textarea>
+      <div class="lyrics-editor-footer" id="lyricsEditorFooter" style="display:none">
+        <span class="lyrics-char-count" id="lyricsCharCount">0 Zeichen</span>
+        <button class="btn primary" onclick="saveLyrics()">&#10003; Speichern</button>
+        <button class="btn reset" onclick="clearLyrics()">Text l&#246;schen</button>
+      </div>
+      <!-- Teleprompter Modus -->
+      <div class="teleprompter" id="teleprompter" style="display:none">
+        <div class="teleprompter-fade-top"></div>
+        <div class="teleprompter-inner" id="teleInner"></div>
+        <div class="teleprompter-fade"></div>
+      </div>
+      <div id="teleControls" style="display:none;padding:8px 14px;background:#1a1a2e;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap">
+        <button class="btn primary" id="telePlayBtn" onclick="toggleScroll()" style="font-size:12px;padding:6px 14px">&#9654; Start</button>
+        <button class="btn" onclick="resetScroll()" style="font-size:12px;padding:6px 10px">&#8635; Reset</button>
+        <div class="speed-row">
+          <span class="speed-label">Feinabstimmung:</span>
+          <input type="range" id="scrollSpeed" min="0.3" max="3" step="0.1" value="1.0" style="width:90px">
+          <span class="speed-label" id="speedVal">x1.0</span>
+        </div>
+        <span class="speed-label" id="bpmSpeedInfo" style="color:#378ADD"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// SONGTEXTE + TELEPROMPTER + METRONOM
+var currentLyricsSongN = null;
+var lyricsMode = 'edit'; // 'edit' or 'tele'
+var metroRunning = false;
+var metroCtx = null;
+var metroTimer = null;
+var scrollRunning = false;
+var scrollTimer = null;
+var scrollPos = 0;
+
+function renderLyricsPage() {
+  var list = document.getElementById('lyricsSongList');
+  if (!list) return;
+  list.innerHTML = '';
+  var vocalSongs = songs.filter(function(s){ return s.instr && s.instr.indexOf('Gesang') !== -1; });
+  if (!vocalSongs.length) {
+    list.innerHTML = '<p style="color:#aaa;font-size:13px;padding:12px">Keine Songs mit Gesang.</p>';
+    return;
+  }
+  vocalSongs.forEach(function(s) {
+    var item = document.createElement('div');
+    item.className = 'lyrics-song-item' + (getLyrics(s.n) ? ' has-text' : '') + (currentLyricsSongN===s.n ? ' active' : '');
+    item.id = 'lsi-' + s.n;
+    var num = document.createElement('div'); num.className = 'lsi-num'; num.textContent = '#' + s.n;
+    var title = document.createElement('div'); title.className = 'lsi-title'; title.textContent = s.t;
+    var artist = document.createElement('div'); artist.className = 'lsi-artist'; artist.textContent = s.a;
+    item.appendChild(num); item.appendChild(title); item.appendChild(artist);
+    (function(sn){ item.addEventListener('click', function(){ openLyricsEditor(sn); }); })(s.n);
+    list.appendChild(item);
+  });
+  if (currentLyricsSongN !== null) openLyricsEditor(currentLyricsSongN);
+}
+
+function getLyrics(n) {
+  try { return localStorage.getItem('blameit_lyrics_' + n) || ''; } catch(e){ return ''; }
+}
+function saveLyricsData(n, text) {
+  try { localStorage.setItem('blameit_lyrics_' + n, text); } catch(e){}
+}
+
+function getLyricsBpm(n) {
+  try { return parseInt(localStorage.getItem('blameit_bpm_' + n)) || 120; } catch(e){ return 120; }
+}
+function saveLyricsBpm(n, bpm) {
+  try { localStorage.setItem('blameit_bpm_' + n, bpm); } catch(e){}
+}
+function getLyricsFine(n) {
+  try { return parseFloat(localStorage.getItem('blameit_fine_' + n)) || 1.0; } catch(e){ return 1.0; }
+}
+function saveLyricsFine(n, fine) {
+  try { localStorage.setItem('blameit_fine_' + n, fine); } catch(e){}
+}
+
+function openLyricsEditor(n) {
+  stopMetronome();
+  stopScroll();
+  currentLyricsSongN = n;
+  var s = songs.filter(function(x){ return x.n === n; })[0];
+  if (!s) return;
+  document.querySelectorAll('.lyrics-song-item').forEach(function(el){ el.classList.remove('active'); });
+  var item = document.getElementById('lsi-' + n);
+  if (item) item.classList.add('active');
+  document.getElementById('lyricsEditorHeader').style.display = 'flex';
+  document.getElementById('lyricsEditorTitle').textContent = s.t;
+  document.getElementById('lyricsEditorSub').textContent = s.a;
+  document.getElementById('lyricsEditorEmpty').style.display = 'none';
+  // Load BPM + Feinabstimmung
+  document.getElementById('metroBpm').value = getLyricsBpm(n);
+  var fine = getLyricsFine(n);
+  var sp = document.getElementById('scrollSpeed');
+  if (sp) { sp.value = fine; document.getElementById('speedVal').textContent = 'x' + fine.toFixed(1); }
+  // Set edit mode
+  setMode(lyricsMode);
+}
+
+function setMode(mode) {
+  lyricsMode = mode;
+  var isEdit = mode === 'edit';
+  document.getElementById('btnEdit').classList.toggle('active', isEdit);
+  document.getElementById('btnTele').classList.toggle('active', !isEdit);
+  // Edit mode elements
+  document.getElementById('lyricsTextarea').style.display = isEdit ? 'block' : 'none';
+  document.getElementById('lyricsEditorFooter').style.display = isEdit ? 'flex' : 'none';
+  // Tele mode elements
+  document.getElementById('teleprompter').style.display = isEdit ? 'none' : 'block';
+  document.getElementById('teleControls').style.display = isEdit ? 'none' : 'flex';
+  if (isEdit) {
+    stopScroll();
+    var ta = document.getElementById('lyricsTextarea');
+    ta.value = getLyrics(currentLyricsSongN);
+    updateLyricsCount();
+    ta.focus();
+  } else {
+    // Show teleprompter - text starts at top, padding-bottom pushes it so
+    // initial view shows beginning of text
+    var text = getLyrics(currentLyricsSongN) || '(Kein Text vorhanden)';
+    document.getElementById('teleInner').textContent = text;
+    // Reset scroll to top so text starts from beginning
+    var tele = document.getElementById('teleprompter');
+    scrollPos = 0;
+    if (tele) tele.scrollTop = 0;
+    var btn = document.getElementById('telePlayBtn');
+    if (btn) btn.innerHTML = '&#9654; Start';
+    scrollRunning = false;
+    updateBpmSpeedInfo();
+  }
+}
+
+function saveLyrics() {
+  if (currentLyricsSongN === null) return;
+  var text = document.getElementById('lyricsTextarea').value;
+  saveLyricsData(currentLyricsSongN, text);
+  var item = document.getElementById('lsi-' + currentLyricsSongN);
+  if (item) { if (text.trim()) item.classList.add('has-text'); else item.classList.remove('has-text'); }
+  showToast('Songtext gespeichert!');
+}
+
+function clearLyrics() {
+  if (currentLyricsSongN === null) return;
+  if (!confirm('Songtext wirklich loeschen?')) return;
+  saveLyricsData(currentLyricsSongN, '');
+  document.getElementById('lyricsTextarea').value = '';
+  var item = document.getElementById('lsi-' + currentLyricsSongN);
+  if (item) item.classList.remove('has-text');
+  updateLyricsCount();
+  showToast('Text geloescht.');
+}
+
+function updateLyricsCount() {
+  var ta = document.getElementById('lyricsTextarea');
+  var cc = document.getElementById('lyricsCharCount');
+  if (ta && cc) cc.textContent = ta.value.length + ' Zeichen';
+}
+
+// ── TELEPROMPTER ──
+// Text starts at BOTTOM, scrolls UP. Container scrolls naturally via scrollTop.
+function initTeleprompter() {
+  var tele = document.getElementById('teleprompter');
+  if (!tele) return;
+  // Start at top (scrollTop = 0 = text at top, we want text to start at bottom)
+  // We use a different approach: pad top so text starts below visible area
+  tele.scrollTop = 0;
+  scrollPos = 0;
+}
+
+function resetScroll() {
+  stopScroll();
+  scrollPos = 0;
+  var tele = document.getElementById('teleprompter');
+  if (tele) tele.scrollTop = 0;
+  var btn = document.getElementById('telePlayBtn');
+  if (btn) btn.innerHTML = '&#9654; Start';
+}
+
+function toggleScroll() {
+  if (scrollRunning) stopScroll(); else startScroll();
+}
+
+function getScrollSpeed() {
+  // Base speed from BPM: 60 BPM = slow, 180 BPM = fast
+  // Multiplied by the manual fine-tune slider (0.5x - 2x)
+  var bpm = parseInt(document.getElementById('metroBpm').value) || 120;
+  var fine = parseFloat(document.getElementById('scrollSpeed').value) || 1.0;
+  // Map BPM 40-300 to pixels-per-frame 0.2-2.5, then multiply by fine tune
+  var base = (bpm - 40) / (300 - 40) * (2.5 - 0.2) + 0.2;
+  return base * fine;
+}
+
+function startScroll() {
+  scrollRunning = true;
+  document.getElementById('telePlayBtn').innerHTML = '&#9646;&#9646; Pause';
+  var tele = document.getElementById('teleprompter');
+  function step() {
+    if (!scrollRunning) return;
+    scrollPos += getScrollSpeed();
+    var maxScroll = tele.scrollHeight - tele.clientHeight;
+    if (scrollPos >= maxScroll) {
+      tele.scrollTop = maxScroll;
+      stopScroll();
+      return;
+    }
+    tele.scrollTop = scrollPos;
+    scrollTimer = requestAnimationFrame(step);
+  }
+  scrollTimer = requestAnimationFrame(step);
+}
+
+function stopScroll() {
+  scrollRunning = false;
+  if (scrollTimer) { cancelAnimationFrame(scrollTimer); scrollTimer = null; }
+  var tele = document.getElementById('teleprompter');
+  if (tele) scrollPos = tele.scrollTop; // sync position if user scrolled manually
+  var btn = document.getElementById('telePlayBtn');
+  if (btn) btn.innerHTML = '&#9654; Start';
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var sp = document.getElementById('scrollSpeed');
+  if (sp) sp.addEventListener('input', function(){
+    var val = parseFloat(sp.value);
+    document.getElementById('speedVal').textContent = 'x' + val.toFixed(1);
+    if (currentLyricsSongN !== null) saveLyricsFine(currentLyricsSongN, val);
+    updateBpmSpeedInfo();
+  });
+  var ta = document.getElementById('lyricsTextarea');
+  if (ta) ta.addEventListener('input', updateLyricsCount);
+  var bpmInp = document.getElementById('metroBpm');
+  if (bpmInp) bpmInp.addEventListener('change', function(){
+    if (currentLyricsSongN !== null) saveLyricsBpm(currentLyricsSongN, parseInt(bpmInp.value)||120);
+    if (metroRunning) { stopMetronome(); startMetronome(); }
+    updateBpmSpeedInfo();
+  });
+  if (bpmInp) bpmInp.addEventListener('input', function(){ updateBpmSpeedInfo(); });
+  // Sync manual scroll position so auto-scroll continues from there
+  var tele = document.getElementById('teleprompter');
+  if (tele) {
+    tele.addEventListener('scroll', function(){
+      if (!scrollRunning) scrollPos = tele.scrollTop;
+    });
+    // Touch: allow manual drag while paused
+    tele.addEventListener('touchstart', function(){ if (scrollRunning) stopScroll(); }, {passive:true});
+  }
+});
+
+function updateBpmSpeedInfo() {
+  var info = document.getElementById('bpmSpeedInfo');
+  if (!info) return;
+  var bpm = parseInt(document.getElementById('metroBpm').value) || 120;
+  var fine = parseFloat(document.getElementById('scrollSpeed').value) || 1.0;
+  var base = (bpm - 40) / (300 - 40) * (2.5 - 0.2) + 0.2;
+  var speed = (base * fine).toFixed(2);
+  info.textContent = bpm + ' BPM → ' + speed + ' px/frame';
+}
+
+// ── METRONOM ──
+function toggleMetronome() {
+  if (metroRunning) stopMetronome(); else startMetronome();
+}
+
+function startMetronome() {
+  var bpm = parseInt(document.getElementById('metroBpm').value) || 120;
+  if (bpm < 20) bpm = 20; if (bpm > 400) bpm = 400;
+  metroRunning = true;
+  document.getElementById('metroBtn').classList.add('running');
+  document.getElementById('metroBtn').innerHTML = '&#9646;&#9646;';
+  var interval = 60000 / bpm;
+  // Use AudioContext for precise click sound
+  try {
+    metroCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch(e){ metroCtx = null; }
+  function tick() {
+    if (!metroRunning) return;
+    // Flash beat indicator
+    var beat = document.getElementById('metroBeat');
+    if (beat) { beat.classList.add('on'); setTimeout(function(){ beat.classList.remove('on'); }, 80); }
+    // Click sound
+    if (metroCtx) {
+      var osc = metroCtx.createOscillator();
+      var gain = metroCtx.createGain();
+      osc.connect(gain); gain.connect(metroCtx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.4, metroCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, metroCtx.currentTime + 0.06);
+      osc.start(metroCtx.currentTime);
+      osc.stop(metroCtx.currentTime + 0.06);
+    }
+    metroTimer = setTimeout(tick, interval);
+  }
+  tick();
+}
+
+function stopMetronome() {
+  metroRunning = false;
+  if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
+  var btn = document.getElementById('metroBtn');
+  if (btn) { btn.classList.remove('running'); btn.innerHTML = '&#9654;'; }
+  var beat = document.getElementById('metroBeat');
+  if (beat) beat.classList.remove('on');
+}
+</script>
+
 </body>
 </html>
