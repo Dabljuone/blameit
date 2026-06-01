@@ -427,120 +427,148 @@ var setlist = [];
 var dragSrc = null;
 var editingSongIdx = null;
 
-// CLOUD SYNC
+// ── ADMIN & CLOUD ──
 var JSONBIN_KEY = '$2a$10$4uccp70OwZR5qPACY1GuYeyhu4WEISwN4nQMJ2x3Q9t17f4J2yhhi';
-var ADMIN_PW_HASH = 'BlameIt2024';
+var ADMIN_PW = 'BlameIt2024';
 var isAdmin = false;
 
-function getAdminState(){try{return localStorage.getItem('blameit_admin')==='1';}catch(e){return false;}}
-function setAdminState(v){try{localStorage.setItem('blameit_admin',v?'1':'0');}catch(e){}}
-function checkAdminPw(){
-  var inp=document.getElementById('adminPwInput');if(!inp)return;
-  if(inp.value===ADMIN_PW_HASH){
-    isAdmin=true;setAdminState(true);
-    document.getElementById('adminPwError').style.display='none';
-    // Ensure songs loaded from localStorage before rendering
-    if(!songs.length){
-      try{var s=localStorage.getItem('blameit_songs');if(s)songs=JSON.parse(s);}catch(e){}
-    }
-    if(!songs.length){
-      songs=DEFAULT_SONGS.map(function(x){return{n:x.n,t:x.t,a:x.a,instr:x.instr.slice()};});
-    }
-    renderSettingsPage();showToast('Admin-Modus aktiviert!');
-  }else{document.getElementById('adminPwError').style.display='block';}
-}
-function adminLogout(){isAdmin=false;setAdminState(false);renderSettingsPage();showToast('Ausgeloggt.');}
+function getAdminState(){ try{return localStorage.getItem('blameit_admin')==='1';}catch(e){return false;} }
+function setAdminState(v){ try{localStorage.setItem('blameit_admin',v?'1':'0');}catch(e){} }
 
-function getBinId(){try{return localStorage.getItem('blameit_bin_id')||null;}catch(e){return null;}}
-function setBinId(id){try{localStorage.setItem('blameit_bin_id',id);}catch(e){}}
-
-function setSyncStatus(state,msg){
-  var dot=document.getElementById('syncDot'),lbl=document.getElementById('syncLabel');
-  if(dot)dot.className='sync-dot'+(state==='ok'?' ok':state==='err'?' err':' loading');
-  if(lbl)lbl.textContent=msg;
+function checkAdminPw() {
+  var inp = document.getElementById('adminPwInput');
+  if (!inp) return;
+  if (inp.value.trim() === ADMIN_PW) {
+    isAdmin = true;
+    setAdminState(true);
+    inp.value = '';
+    document.getElementById('adminPwError').style.display = 'none';
+    renderSettingsPage();
+    showToast('Admin-Modus aktiviert!');
+  } else {
+    document.getElementById('adminPwError').style.display = 'block';
+  }
 }
 
-function buildCloudPayload(){
-  var lyrics={},bpm={},fine={};
-  songs.forEach(function(s){
-    try{
-      var l=localStorage.getItem('blameit_lyrics_'+s.n);if(l)lyrics[s.n]=l;
-      var b=localStorage.getItem('blameit_bpm_'+s.n);if(b)bpm[s.n]=b;
-      var f=localStorage.getItem('blameit_fine_'+s.n);if(f)fine[s.n]=f;
-    }catch(e){}
+function adminLogout() {
+  isAdmin = false;
+  setAdminState(false);
+  renderSettingsPage();
+  showToast('Ausgeloggt.');
+}
+
+function getBinId(){ try{return localStorage.getItem('blameit_bin_id')||null;}catch(e){return null;} }
+function setBinId(id){ try{localStorage.setItem('blameit_bin_id',id);}catch(e){} }
+
+function setSyncStatus(state, msg) {
+  var dot = document.getElementById('syncDot');
+  var lbl = document.getElementById('syncLabel');
+  if (dot) dot.className = 'sync-dot' + (state==='ok'?' ok':state==='err'?' err':' loading');
+  if (lbl) lbl.textContent = msg;
+}
+
+function buildPayload() {
+  var lyrics = {}, bpm = {}, fine = {};
+  songs.forEach(function(s) {
+    try {
+      var l = localStorage.getItem('blameit_lyrics_'+s.n); if (l) lyrics[s.n] = l;
+      var b = localStorage.getItem('blameit_bpm_'+s.n);    if (b) bpm[s.n]    = b;
+      var f = localStorage.getItem('blameit_fine_'+s.n);   if (f) fine[s.n]   = f;
+    } catch(e) {}
   });
-  return{songs:songs,bandName:bandName,lyrics:lyrics,bpm:bpm,fine:fine};
+  return { songs: songs, bandName: bandName, lyrics: lyrics, bpm: bpm, fine: fine };
 }
 
-function syncFromCloud(){
-  var binId=getBinId();
-  if(!binId){
-    setSyncStatus('err','Noch kein Band-Datenspeicher – als Admin einloggen und speichern.');
-    if(document.getElementById('pageSettings')&&document.getElementById('pageSettings').classList.contains('active')){renderSettingsPage();}
+function applyCloudData(rec) {
+  if (!rec) return;
+  if (rec.songs && rec.songs.length > 0) songs = rec.songs;
+  if (rec.bandName) bandName = rec.bandName;
+  if (rec.lyrics) Object.keys(rec.lyrics).forEach(function(k){ try{localStorage.setItem('blameit_lyrics_'+k, rec.lyrics[k]);}catch(e){} });
+  if (rec.bpm)    Object.keys(rec.bpm).forEach(function(k){    try{localStorage.setItem('blameit_bpm_'+k,    rec.bpm[k]);}catch(e){} });
+  if (rec.fine)   Object.keys(rec.fine).forEach(function(k){   try{localStorage.setItem('blameit_fine_'+k,   rec.fine[k]);}catch(e){} });
+  saveData(); updatePageTitle(); rebuildGrids();
+}
+
+function syncFromCloud() {
+  var binId = getBinId();
+  if (!binId) {
+    setSyncStatus('err', 'Kein Cloud-Speicher – Admin muss einmalig speichern.');
     return;
   }
-  setSyncStatus('loading','Synchronisiere...');
-  fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{
-    headers:{'X-Master-Key':JSONBIN_KEY}
-  }).then(function(r){return r.json();}).then(function(data){
-    if(data&&data.record){
-      var rec=data.record;
-      if(rec.songs&&rec.songs.length){songs=rec.songs;}
-      if(rec.bandName){bandName=rec.bandName;}
-      if(rec.lyrics)Object.keys(rec.lyrics).forEach(function(k){try{localStorage.setItem('blameit_lyrics_'+k,rec.lyrics[k]);}catch(e){}});
-      if(rec.bpm)Object.keys(rec.bpm).forEach(function(k){try{localStorage.setItem('blameit_bpm_'+k,rec.bpm[k]);}catch(e){}});
-      if(rec.fine)Object.keys(rec.fine).forEach(function(k){try{localStorage.setItem('blameit_fine_'+k,rec.fine[k]);}catch(e){}});
-      saveData();updatePageTitle();rebuildGrids();
-      setSyncStatus('ok','Synchronisiert – '+new Date().toLocaleTimeString('de-DE'));
-      // Re-render settings if open so song list updates after sync
-      if (document.getElementById('pageSettings') && document.getElementById('pageSettings').classList.contains('active')) {
-        renderSettingsPage();
-      }
+  setSyncStatus('loading', 'Synchronisiere...');
+  fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', {
+    headers: { 'X-Master-Key': JSONBIN_KEY }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data && data.record && !data.message) {
+      applyCloudData(data.record);
+      setSyncStatus('ok', 'Synchronisiert – ' + new Date().toLocaleTimeString('de-DE'));
+      if (document.getElementById('pageSettings').classList.contains('active')) renderSettingsPage();
+    } else {
+      setSyncStatus('err', 'Sync-Fehler: ' + (data.message || 'Unbekannt'));
     }
-  }).catch(function(){setSyncStatus('err','Verbindungsfehler – lokale Daten');});
+  })
+  .catch(function(e) { setSyncStatus('err', 'Verbindungsfehler'); });
 }
 
-function createBin(){
-  setSyncStatus('loading','Erstelle Band-Datenspeicher...');
-  fetch('https://api.jsonbin.io/v3/b',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY,'X-Bin-Name':'BlameIt-Band','X-Bin-Private':'false'},
-    body:JSON.stringify(buildCloudPayload())
-  }).then(function(r){return r.json();}).then(function(data){
-    if(data&&data.metadata&&data.metadata.id){
+function pushToCloud() {
+  var binId = getBinId();
+  if (!binId) { createBin(); return; }
+  setSyncStatus('loading', 'Speichere in Cloud...');
+  fetch('https://api.jsonbin.io/v3/b/' + binId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
+    body: JSON.stringify(buildPayload())
+  })
+  .then(function(r) { return r.json(); })
+  .then(function() { setSyncStatus('ok', 'Gespeichert – ' + new Date().toLocaleTimeString('de-DE')); showToast('In Cloud gespeichert!'); })
+  .catch(function() { setSyncStatus('err', 'Fehler beim Speichern'); });
+}
+
+function createBin() {
+  setSyncStatus('loading', 'Erstelle Cloud-Speicher...');
+  fetch('https://api.jsonbin.io/v3/b', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Name': 'BlameIt-Band', 'X-Bin-Private': 'false' },
+    body: JSON.stringify(buildPayload())
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data && data.metadata && data.metadata.id) {
       setBinId(data.metadata.id);
-      setSyncStatus('ok','Band-Datenspeicher erstellt!');
-      showToast('Cloud eingerichtet!');
+      setSyncStatus('ok', 'Cloud-Speicher erstellt!');
+      showToast('Cloud eingerichtet! Alle können jetzt synchronisieren.');
+    } else {
+      setSyncStatus('err', 'Fehler: ' + JSON.stringify(data));
     }
-  }).catch(function(){setSyncStatus('err','Fehler beim Erstellen');});
+  })
+  .catch(function() { setSyncStatus('err', 'Fehler beim Erstellen'); });
 }
 
-function pushToCloud(){
-  var binId=getBinId();
-  if(!binId){if(isAdmin)createBin();return;}
-  setSyncStatus('loading','Speichere...');
-  fetch('https://api.jsonbin.io/v3/b/'+binId,{
-    method:'PUT',
-    headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
-    body:JSON.stringify(buildCloudPayload())
-  }).then(function(r){return r.json();}).then(function(){
-    setSyncStatus('ok','Gespeichert – '+new Date().toLocaleTimeString('de-DE'));
-  }).catch(function(){setSyncStatus('err','Fehler beim Speichern');});
-}
-
-function loadData(){
-  isAdmin=getAdminState();
-  try{
-    var s=localStorage.getItem('blameit_songs');
-    songs=s?JSON.parse(s):DEFAULT_SONGS.map(function(x){return{n:x.n,t:x.t,a:x.a,instr:x.instr.slice()};});
-    bandName=localStorage.getItem('blameit_bandname')||'BlameIt';
-  }catch(e){
-    songs=DEFAULT_SONGS.map(function(x){return{n:x.n,t:x.t,a:x.a,instr:x.instr.slice()};});
+function loadData() {
+  isAdmin = getAdminState();
+  try {
+    var s = localStorage.getItem('blameit_songs');
+    if (s) {
+      songs = JSON.parse(s);
+    } else {
+      songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
+      saveData();
+    }
+    bandName = localStorage.getItem('blameit_bandname') || 'BlameIt';
+  } catch(e) {
+    songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
   }
-  setTimeout(syncFromCloud,800);
+  // Sync from cloud after short delay (non-blocking)
+  setTimeout(syncFromCloud, 1000);
 }
-function saveData(){
-  try{localStorage.setItem('blameit_songs',JSON.stringify(songs));localStorage.setItem('blameit_bandname',bandName);}catch(e){}
+
+function saveData() {
+  try {
+    localStorage.setItem('blameit_songs', JSON.stringify(songs));
+    localStorage.setItem('blameit_bandname', bandName);
+  } catch(e) {}
 }
 
 // ── NAVIGATION ──
