@@ -427,10 +427,13 @@ var setlist = [];
 var dragSrc = null;
 var editingSongIdx = null;
 
-// ── ADMIN & CLOUD ──
-var JSONBIN_KEY = '$2a$10$4uccp70OwZR5qPACY1GuYeyhu4WEISwN4nQMJ2x3Q9t17f4J2yhhi';
+// ── ADMIN & CLOUD (GitHub) ──
+var GITHUB_TOKEN = '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';
+var GITHUB_REPO  = 'dabljuone/blameit';
+var GITHUB_FILE  = 'banddata.json';
 var ADMIN_PW = 'BlameIt2024';
 var isAdmin = false;
+var githubFileSha = null; // needed for updates
 
 function getAdminState(){ try{return localStorage.getItem('blameit_admin')==='1';}catch(e){return false;} }
 function setAdminState(v){ try{localStorage.setItem('blameit_admin',v?'1':'0');}catch(e){} }
@@ -439,26 +442,21 @@ function checkAdminPw() {
   var inp = document.getElementById('adminPwInput');
   if (!inp) return;
   if (inp.value.trim() === ADMIN_PW) {
-    isAdmin = true;
-    setAdminState(true);
-    inp.value = '';
+    isAdmin = true; setAdminState(true); inp.value = '';
     document.getElementById('adminPwError').style.display = 'none';
     document.getElementById('adminLoginCard').style.display = 'none';
     document.getElementById('cardBandname').style.display = 'block';
     document.getElementById('cardSongs').style.display = 'block';
     document.getElementById('cardLogout').style.display = 'block';
     var badge = document.getElementById('adminBadge');
-    if (badge) { badge.style.display = 'inline'; badge.className = 'admin-badge'; badge.textContent = 'Admin'; }
+    if (badge) { badge.style.display='inline'; badge.className='admin-badge'; badge.textContent='Admin'; }
     var sub = document.getElementById('settingsSubtitle');
     if (sub) sub.textContent = 'Du bist als Admin eingeloggt.';
-    var bi = document.getElementById('bandNameInput');
-    if (bi) bi.value = bandName;
+    var bi = document.getElementById('bandNameInput'); if(bi) bi.value = bandName;
     if (!songs.length) {
-      try { var s = localStorage.getItem('blameit_songs'); if(s) songs=JSON.parse(s); } catch(e){}
+      try { var s=localStorage.getItem('blameit_songs'); if(s) songs=JSON.parse(s); } catch(e){}
     }
-    if (!songs.length) {
-      songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
-    }
+    if (!songs.length) songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
     buildSongEditList();
     showToast('Admin-Modus aktiviert!');
   } else {
@@ -467,34 +465,26 @@ function checkAdminPw() {
 }
 
 function buildSongEditList() {
-  var list = document.getElementById('songEditList');
-  if (!list) return;
+  var list = document.getElementById('songEditList'); if(!list) return;
   list.innerHTML = '';
-  if (!songs.length) {
-    list.innerHTML = '<p style="color:#aaa;font-size:13px">Keine Songs gefunden.</p>';
-    return;
-  }
+  if (!songs.length) { list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs gefunden.</p>'; return; }
   songs.forEach(function(s, idx) {
-    var row = document.createElement('div'); row.className = 'song-edit-row';
-    var num = document.createElement('div'); num.className = 'song-edit-num'; num.textContent = idx+1;
-    var info = document.createElement('div'); info.className = 'song-edit-info';
-    var t = document.createElement('div'); t.className = 'song-edit-title'; t.textContent = s.t;
-    var a = document.createElement('div'); a.className = 'song-edit-artist'; a.textContent = s.a;
+    var row=document.createElement('div'); row.className='song-edit-row';
+    var num=document.createElement('div'); num.className='song-edit-num'; num.textContent=idx+1;
+    var info=document.createElement('div'); info.className='song-edit-info';
+    var t=document.createElement('div'); t.className='song-edit-title'; t.textContent=s.t;
+    var a=document.createElement('div'); a.className='song-edit-artist'; a.textContent=s.a;
     info.appendChild(t); info.appendChild(a);
-    var eb = document.createElement('button'); eb.className = 'edit-btn'; eb.textContent = 'Bearbeiten';
-    var db = document.createElement('button'); db.className = 'edit-btn del'; db.textContent = 'Loeschen';
-    (function(i){
-      eb.addEventListener('click', function(){ openEditSong(i); });
-      db.addEventListener('click', function(){ deleteSong(i); });
-    })(idx);
+    var eb=document.createElement('button'); eb.className='edit-btn'; eb.textContent='Bearbeiten';
+    var db=document.createElement('button'); db.className='edit-btn del'; db.textContent='Loeschen';
+    (function(i){ eb.addEventListener('click',function(){openEditSong(i);}); db.addEventListener('click',function(){deleteSong(i);}); })(idx);
     row.appendChild(num); row.appendChild(info); row.appendChild(eb); row.appendChild(db);
     list.appendChild(row);
   });
 }
 
 function adminLogout() {
-  isAdmin = false;
-  setAdminState(false);
+  isAdmin = false; setAdminState(false);
   document.getElementById('adminLoginCard').style.display = 'block';
   document.getElementById('cardBandname').style.display = 'none';
   document.getElementById('cardSongs').style.display = 'none';
@@ -504,140 +494,123 @@ function adminLogout() {
   showToast('Ausgeloggt.');
 }
 
-function getBinId(){ try{return localStorage.getItem('blameit_bin_id')||null;}catch(e){return null;} }
-function setBinId(id){ try{localStorage.setItem('blameit_bin_id',id);}catch(e){} }
-
 function setSyncStatus(state, msg) {
-  var dot = document.getElementById('syncDot');
-  var lbl = document.getElementById('syncLabel');
-  if (dot) dot.className = 'sync-dot' + (state==='ok'?' ok':state==='err'?' err':' loading');
+  var dot=document.getElementById('syncDot'), lbl=document.getElementById('syncLabel');
+  if (dot) dot.className='sync-dot'+(state==='ok'?' ok':state==='err'?' err':' loading');
   if (lbl) lbl.textContent = msg;
 }
 
 function buildPayload() {
-  var lyrics = {}, bpm = {}, fine = {};
-  songs.forEach(function(s) {
+  var lyrics={}, bpm={}, fine={};
+  songs.forEach(function(s){
     try {
-      var l = localStorage.getItem('blameit_lyrics_'+s.n); if (l) lyrics[s.n] = l;
-      var b = localStorage.getItem('blameit_bpm_'+s.n);    if (b) bpm[s.n]    = b;
-      var f = localStorage.getItem('blameit_fine_'+s.n);   if (f) fine[s.n]   = f;
-    } catch(e) {}
+      var l=localStorage.getItem('blameit_lyrics_'+s.n); if(l) lyrics[s.n]=l;
+      var b=localStorage.getItem('blameit_bpm_'+s.n);    if(b) bpm[s.n]=b;
+      var f=localStorage.getItem('blameit_fine_'+s.n);   if(f) fine[s.n]=f;
+    } catch(e){}
   });
-  return { songs: songs, bandName: bandName, lyrics: lyrics, bpm: bpm, fine: fine };
+  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine };
 }
 
 function applyCloudData(rec) {
   if (!rec) return;
-  if (rec.songs && rec.songs.length > 0) songs = rec.songs;
+  if (rec.songs && rec.songs.length) songs = rec.songs;
   if (rec.bandName) bandName = rec.bandName;
-  if (rec.lyrics) Object.keys(rec.lyrics).forEach(function(k){ try{localStorage.setItem('blameit_lyrics_'+k, rec.lyrics[k]);}catch(e){} });
-  if (rec.bpm)    Object.keys(rec.bpm).forEach(function(k){    try{localStorage.setItem('blameit_bpm_'+k,    rec.bpm[k]);}catch(e){} });
-  if (rec.fine)   Object.keys(rec.fine).forEach(function(k){   try{localStorage.setItem('blameit_fine_'+k,   rec.fine[k]);}catch(e){} });
+  if (rec.lyrics) Object.keys(rec.lyrics).forEach(function(k){ try{localStorage.setItem('blameit_lyrics_'+k,rec.lyrics[k]);}catch(e){} });
+  if (rec.bpm)    Object.keys(rec.bpm).forEach(function(k){    try{localStorage.setItem('blameit_bpm_'+k,   rec.bpm[k]);}catch(e){} });
+  if (rec.fine)   Object.keys(rec.fine).forEach(function(k){   try{localStorage.setItem('blameit_fine_'+k,  rec.fine[k]);}catch(e){} });
   saveData(); updatePageTitle(); rebuildGrids();
 }
 
 function syncFromCloud() {
-  var binId = getBinId();
-  if (!binId) {
-    setSyncStatus('err', 'Kein Cloud-Speicher – Admin muss einmalig speichern.');
-    return;
-  }
   setSyncStatus('loading', 'Synchronisiere...');
-  fetch('https://api.jsonbin.io/v3/b/' + binId + '/latest', {
-    headers: { 'X-Master-Key': JSONBIN_KEY }
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data && data.record && !data.message) {
-      applyCloudData(data.record);
+  // Read banddata.json from GitHub (public, no auth needed)
+  var url = 'https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/' + GITHUB_FILE + '?t=' + Date.now();
+  fetch(url)
+    .then(function(r) {
+      if (r.status === 404) { setSyncStatus('err', 'Noch keine Cloud-Daten – Admin muss einmalig speichern.'); return null; }
+      return r.json();
+    })
+    .then(function(data) {
+      if (!data) return;
+      applyCloudData(data);
       setSyncStatus('ok', 'Synchronisiert – ' + new Date().toLocaleTimeString('de-DE'));
       if (document.getElementById('pageSettings').classList.contains('active')) renderSettingsPage();
-    } else {
-      setSyncStatus('err', 'Sync-Fehler: ' + (data.message || 'Unbekannt'));
-    }
-  })
-  .catch(function(e) { setSyncStatus('err', 'Verbindungsfehler'); });
+      showToast('Daten aktualisiert!');
+    })
+    .catch(function() { setSyncStatus('err', 'Verbindungsfehler'); });
 }
 
 function pushToCloud() {
-  var binId = getBinId();
-  if (!binId) { createBin(); return; }
   setSyncStatus('loading', 'Speichere in Cloud...');
-  fetch('https://api.jsonbin.io/v3/b/' + binId, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY },
-    body: JSON.stringify(buildPayload())
+  var content = JSON.stringify(buildPayload(), null, 2);
+  var encoded = btoa(unescape(encodeURIComponent(content)));
+  // First get current SHA (needed for update)
+  fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + GITHUB_FILE, {
+    headers: { 'Authorization': 'token ' + GITHUB_TOKEN, 'Accept': 'application/vnd.github+json' }
   })
-  .then(function(r) { return r.json(); })
-  .then(function() { setSyncStatus('ok', 'Gespeichert – ' + new Date().toLocaleTimeString('de-DE')); showToast('In Cloud gespeichert!'); })
-  .catch(function() { setSyncStatus('err', 'Fehler beim Speichern'); });
-}
-
-function createBin() {
-  setSyncStatus('loading', 'Erstelle Cloud-Speicher...');
-  fetch('https://api.jsonbin.io/v3/b', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Name': 'BlameIt-Band', 'X-Bin-Private': 'false' },
-    body: JSON.stringify(buildPayload())
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(existing) {
+    var body = { message: 'Update band data', content: encoded };
+    if (existing && existing.sha) body.sha = existing.sha;
+    return fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + GITHUB_FILE, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + GITHUB_TOKEN,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data && data.metadata && data.metadata.id) {
-      setBinId(data.metadata.id);
-      setSyncStatus('ok', 'Cloud-Speicher erstellt!');
-      showToast('Cloud eingerichtet! Alle können jetzt synchronisieren.');
+    if (data && data.content) {
+      setSyncStatus('ok', 'Gespeichert – ' + new Date().toLocaleTimeString('de-DE'));
+      showToast('In Cloud gespeichert! Alle Geräte werden beim nächsten Öffnen aktualisiert.');
     } else {
-      setSyncStatus('err', 'Fehler: ' + JSON.stringify(data));
+      setSyncStatus('err', 'Fehler: ' + JSON.stringify(data).substring(0,80));
     }
   })
-  .catch(function() { setSyncStatus('err', 'Fehler beim Erstellen'); });
+  .catch(function(e) { setSyncStatus('err', 'Speicherfehler: ' + e.message); });
 }
 
 function loadData() {
   isAdmin = getAdminState();
   try {
     var s = localStorage.getItem('blameit_songs');
-    if (s) {
-      songs = JSON.parse(s);
-    } else {
-      songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
-      saveData();
-    }
+    if (s) { songs = JSON.parse(s); }
+    else { songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; }); saveData(); }
     bandName = localStorage.getItem('blameit_bandname') || 'BlameIt';
   } catch(e) {
     songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
   }
-  // Sync from cloud after short delay (non-blocking)
   setTimeout(syncFromCloud, 1000);
 }
-
 function saveData() {
-  try {
-    localStorage.setItem('blameit_songs', JSON.stringify(songs));
-    localStorage.setItem('blameit_bandname', bandName);
-  } catch(e) {}
+  try { localStorage.setItem('blameit_songs',JSON.stringify(songs)); localStorage.setItem('blameit_bandname',bandName); } catch(e){}
 }
 
 // ── NAVIGATION ──
 function showPage(page) {
   ['Termin','Setlist','Settings','Lyrics'].forEach(function(p) {
-    var pg = document.getElementById('page'+p); if (pg) pg.classList.toggle('active', p.toLowerCase()===page);
-    var nv = document.getElementById('nav'+p);  if (nv) nv.classList.toggle('active', p.toLowerCase()===page);
+    var pg=document.getElementById('page'+p); if(pg) pg.classList.toggle('active',p.toLowerCase()===page);
+    var nv=document.getElementById('nav'+p);  if(nv) nv.classList.toggle('active',p.toLowerCase()===page);
   });
-  if (page === 'settings') renderSettingsPage();
-  if (page === 'lyrics') renderLyricsPage();
+  if (page==='settings') renderSettingsPage();
+  if (page==='lyrics') renderLyricsPage();
 }
 
-function pad(n) { return String(n).padStart(2,'0'); }
+function pad(n){ return String(n).padStart(2,'0'); }
 
-// ── GRIDS BAUEN ──
+// ── GRIDS ──
 function buildCard(s) {
-  var instr = s.instr || [];
-  var card = document.createElement('div'); card.className='song-card'; card.id='card-'+s.n;
-  var num = document.createElement('div'); num.className='song-num'; num.textContent='#'+s.n;
-  var tl  = document.createElement('div'); tl.className='song-title'; tl.textContent=s.t;
-  var ar  = document.createElement('div'); ar.className='song-artist'; ar.textContent=s.a;
-  var br  = document.createElement('div'); br.className='instrument-badges';
+  var instr=s.instr||[];
+  var card=document.createElement('div'); card.className='song-card'; card.id='card-'+s.n;
+  var num=document.createElement('div'); num.className='song-num'; num.textContent='#'+s.n;
+  var tl=document.createElement('div');  tl.className='song-title';  tl.textContent=s.t;
+  var ar=document.createElement('div');  ar.className='song-artist'; ar.textContent=s.a;
+  var br=document.createElement('div');  br.className='instrument-badges';
   instr.forEach(function(i){var b=document.createElement('span');b.className='badge '+(badgeClass[i]||'');b.textContent=i;br.appendChild(b);});
   card.appendChild(num);card.appendChild(tl);card.appendChild(ar);card.appendChild(br);
   card.addEventListener('click',function(){
@@ -650,27 +623,17 @@ function buildCard(s) {
 }
 
 function buildPickerCard(s) {
-  var pc=document.createElement('div');pc.className='picker-card';pc.id='picker-'+s.n;
-  var pn=document.createElement('div');pn.className='p-num';pn.textContent='#'+s.n;
-  var pt=document.createElement('div');pt.className='p-title';pt.textContent=s.t;
-  var pa=document.createElement('div');pa.className='p-artist';pa.textContent=s.a;
-  var pdR=document.createElement('div');pdR.className='p-dur-row';
-  var pdL=document.createElement('span');pdL.className='p-dur-label';pdL.textContent='L\u00e4nge:';
-  var pdI=document.createElement('input');pdI.type='text';pdI.className='p-dur-inp';pdI.placeholder='0:00';pdI.id='pdur-'+s.n;
+  var pc=document.createElement('div'); pc.className='picker-card'; pc.id='picker-'+s.n;
+  var pn=document.createElement('div'); pn.className='p-num';    pn.textContent='#'+s.n;
+  var pt=document.createElement('div'); pt.className='p-title';  pt.textContent=s.t;
+  var pa=document.createElement('div'); pa.className='p-artist'; pa.textContent=s.a;
+  var pdR=document.createElement('div'); pdR.className='p-dur-row';
+  var pdL=document.createElement('span'); pdL.className='p-dur-label'; pdL.textContent='L\u00e4nge:';
+  var pdI=document.createElement('input'); pdI.type='text'; pdI.className='p-dur-inp'; pdI.placeholder='0:00'; pdI.id='pdur-'+s.n;
   pdI.addEventListener('click',function(e){e.stopPropagation();});
   (function(sn,inp){
-    inp.addEventListener('input',function(){
-      var v=inp.value.trim();
-      setlist.forEach(function(it){if(!it.pause&&it.n===sn){it.dur=v;}});
-      updateTotal();syncSetlistDurInputs(sn,v);
-    });
-    inp.addEventListener('blur',function(){
-      var raw=inp.value.trim();
-      if(raw&&raw.indexOf(':')===-1&&raw.indexOf('.')===-1){var v=parseInt(raw);if(!isNaN(v)){inp.value=(v>99)?Math.floor(v/100)+':'+pad(v%100):v+':00';}}
-      var v=inp.value.trim();
-      setlist.forEach(function(it){if(!it.pause&&it.n===sn){it.dur=v;}});
-      updateTotal();syncSetlistDurInputs(sn,v);
-    });
+    inp.addEventListener('input',function(){var v=inp.value.trim();setlist.forEach(function(it){if(!it.pause&&it.n===sn){it.dur=v;}});updateTotal();syncSetlistDurInputs(sn,v);});
+    inp.addEventListener('blur',function(){var raw=inp.value.trim();if(raw&&raw.indexOf(':')===-1&&raw.indexOf('.')===-1){var v=parseInt(raw);if(!isNaN(v)){inp.value=(v>99)?Math.floor(v/100)+':'+pad(v%100):v+':00';}}var v=inp.value.trim();setlist.forEach(function(it){if(!it.pause&&it.n===sn){it.dur=v;}});updateTotal();syncSetlistDurInputs(sn,v);});
     pc.addEventListener('click',function(){if(pc.classList.contains('in-set'))return;addToSetlist(sn,inp.value.trim());});
   })(s.n,pdI);
   pdR.appendChild(pdL);pdR.appendChild(pdI);
@@ -686,7 +649,6 @@ function rebuildGrids() {
   updateList();
 }
 
-// ── INIT ──
 function init() {
   loadData();
   updatePageTitle();
@@ -697,22 +659,25 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 // ── TERMINPLANER ──
-function updatePageTitle() {
-  var tp=document.getElementById('pageTitle');     if(tp) tp.textContent=bandName+' \u2013 Terminplaner';
-  var st=document.getElementById('setlistTitle');  if(st) st.textContent=bandName+' \u2013 Setliste';
-  var bi=document.getElementById('bandNameInput'); if(bi) bi.value=bandName;
+var badgeClass={"Drums":"badge-drums","Bass":"badge-bass","Key":"badge-key","Git":"badge-git","Sax":"badge-sax","Gesang":"badge-gesang"};
+var selected=[];
+
+function updatePageTitle(){
+  var tp=document.getElementById('pageTitle');    if(tp) tp.textContent=bandName+' \u2013 Terminplaner';
+  var st=document.getElementById('setlistTitle'); if(st) st.textContent=bandName+' \u2013 Setliste';
+  var bi=document.getElementById('bandNameInput');if(bi) bi.value=bandName;
 }
 
-function updateList() {
+function updateList(){
   var el=document.getElementById('selectedList');
   if(!selected.length){el.textContent='Noch keine Songs ausgew\u00e4hlt.';return;}
   el.innerHTML='';
   selected.forEach(function(n,i){
     var s=songs.filter(function(x){return x.n===n;})[0]; if(!s) return;
-    var tag=document.createElement('span');tag.className='tag';
-    var num=document.createElement('span');num.style.fontWeight='700';num.style.marginRight='4px';num.textContent=(i+1)+'.';
-    tag.appendChild(num);tag.appendChild(document.createTextNode('#'+n+' '+s.t));
-    el.appendChild(tag);el.appendChild(document.createTextNode(' '));
+    var tag=document.createElement('span'); tag.className='tag';
+    var num=document.createElement('span'); num.style.fontWeight='700'; num.style.marginRight='4px'; num.textContent=(i+1)+'.';
+    tag.appendChild(num); tag.appendChild(document.createTextNode('#'+n+' '+s.t));
+    el.appendChild(tag); el.appendChild(document.createTextNode(' '));
   });
 }
 
@@ -722,45 +687,35 @@ function getFields(){return{date:document.getElementById('evtDate').value,time:d
 
 function buildSongLines(){
   if(!selected.length) return '';
-  return selected.map(function(n,i){var s=songs.filter(function(x){return x.n===n;})[0];return s?(i+1)+'. #'+n+' '+s.t+' ('+s.a+')':'';}).filter(Boolean).join('\n');
+  return selected.map(function(n,i){var s=songs.filter(function(x){return x.n===n;})[0];return s?(i+1)+'. #'+n+' '+s.t+' ('+s.a+')':''}).filter(Boolean).join('\n');
 }
 
 function toDateTime(d,t){var dp=d.split('-'),tp=t.split(':');return dp[0]+pad(dp[1])+pad(dp[2])+'T'+pad(tp[0])+pad(tp[1])+'00';}
 function calcEnd(d,t,dur){var dp=d.split('-'),tp=t.split(':');var e=new Date(+dp[0],+dp[1]-1,+dp[2],+tp[0],+tp[1]);e.setMinutes(e.getMinutes()+dur);return e.getFullYear()+pad(e.getMonth()+1)+pad(e.getDate())+'T'+pad(e.getHours())+pad(e.getMinutes())+'00';}
 
 function buildGCalUrl(){var f=getFields();if(!f.date)return null;var sl=buildSongLines();var dp=[];if(f.note)dp.push(f.note);if(sl)dp.push('Songs:\n'+sl);var p=new URLSearchParams({action:'TEMPLATE',text:bandName+' \u2013 Probe/Auftritt',dates:toDateTime(f.date,f.time)+'/'+calcEnd(f.date,f.time,f.dur),details:dp.join('\n\n'),location:f.loc});return'https://calendar.google.com/calendar/render?'+p.toString();}
-
 function openGoogleCal(){var url=buildGCalUrl();if(!url){alert('Bitte zuerst ein Datum ausw\u00e4hlen.');return;}window.open(url,'_blank');}
-
 function openWhatsApp(withLink){var f=getFields();var sl=buildSongLines();var lines=['*'+bandName+' \u2013 Termin*',''];if(f.date)lines.push('Datum: '+f.date.split('-').reverse().join('.'));if(f.time)lines.push('Uhrzeit: '+f.time+' Uhr');if(f.dur)lines.push('Dauer: '+f.dur+' Min');if(f.loc)lines.push('Ort: '+f.loc);if(f.note)lines.push('Hinweis: '+f.note);if(sl){lines.push('','*Songs:*');sl.split('\n').forEach(function(s){lines.push('- '+s);});}if(withLink){var u=buildGCalUrl();if(u){lines.push('','Zum Kalender hinzufuegen:',u);}}window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');}
-
 function downloadICS(){var f=getFields();if(!f.date){alert('Bitte ein Datum ausw\u00e4hlen.');return;}var sl=buildSongLines();var dp=[];if(f.note)dp.push(f.note);if(sl)dp.push('Songs:\n'+sl);var desc=dp.join('\n\n').replace(/\n/g,'\\n');var now=new Date();var stamp=now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'T'+pad(now.getHours())+pad(now.getMinutes())+'00';var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BlameIt//DE','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT','UID:'+Date.now()+'@blameit','DTSTAMP:'+stamp,'DTSTART:'+toDateTime(f.date,f.time),'DTEND:'+calcEnd(f.date,f.time,f.dur),'SUMMARY:'+bandName+' \u2013 Probe/Auftritt',f.loc?'LOCATION:'+f.loc:null,desc?'DESCRIPTION:'+desc:null,'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');var blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='blameit_termin.ics';a.click();}
 
 // ── SETLISTE ──
+var setlist=[];
+var dragSrc=null;
+
 function addToSetlist(n,dur){setlist.push({n:n,dur:dur||'',pause:false});var pc=document.getElementById('picker-'+n);if(pc)pc.classList.add('in-set');renderSetlist();}
 function addPause(){setlist.push({n:null,dur:'',pause:true});renderSetlist();}
-
-function removeFromSetlist(idx){
-  var item=setlist[idx];
-  if(item&&!item.pause){var pc=document.getElementById('picker-'+item.n);if(pc)pc.classList.remove('in-set');}
-  setlist.splice(idx,1);renderSetlist();
-}
-function clearSetlist(){
-  setlist.forEach(function(item){if(!item.pause){var pc=document.getElementById('picker-'+item.n);if(pc)pc.classList.remove('in-set');}});
-  setlist=[];renderSetlist();
-}
-
-function parseDur(str){str=(str||'').trim();if(!str)return 0;if(str.indexOf(':')!==-1){var p=str.split(':');return parseInt(p[0]||0)*60+parseInt(p[1]||0);}if(str.indexOf('.')!==-1){var p=str.split('.');return parseInt(p[0]||0)*60+parseInt(p[1]||0);}var v=parseInt(str);return isNaN(v)?0:v*60;}
+function removeFromSetlist(idx){var item=setlist[idx];if(item&&!item.pause){var pc=document.getElementById('picker-'+item.n);if(pc)pc.classList.remove('in-set');}setlist.splice(idx,1);renderSetlist();}
+function clearSetlist(){setlist.forEach(function(item){if(!item.pause){var pc=document.getElementById('picker-'+item.n);if(pc)pc.classList.remove('in-set');}});setlist=[];renderSetlist();}
+function parseDur(str){str=(str||'').trim();if(!str)return 0;if(str.indexOf(':')!==-1){var p=str.split(':');return parseInt(p[0]||0)*60+parseInt(p[1]||0);}var v=parseInt(str);return isNaN(v)?0:v*60;}
 function formatTotal(s){if(s<=0)return'0:00';return Math.floor(s/60)+':'+pad(s%60);}
 
 function renderSetlist(){
   var tbody=document.getElementById('setlistBody');tbody.innerHTML='';
-  if(!setlist.length){var tr=document.createElement('tr');var td=document.createElement('td');td.colSpan=5;td.className='setlist-empty';td.textContent='Noch keine Songs hinzugef\u00fcgt. W\u00e4hle unten Songs aus.';tr.appendChild(td);tbody.appendChild(tr);document.getElementById('totalTime').textContent='0:00';document.getElementById('totalSongs').textContent='0 Songs';return;}
+  if(!setlist.length){var tr=document.createElement('tr');var td=document.createElement('td');td.colSpan=5;td.className='setlist-empty';td.textContent='Noch keine Songs hinzugef\u00fcgt.';tr.appendChild(td);tbody.appendChild(tr);document.getElementById('totalTime').textContent='0:00';document.getElementById('totalSongs').textContent='0 Songs';return;}
   var totalSecs=0,songPos=0;
   setlist.forEach(function(item,idx){
-    var isPause=item.pause;
-    var s=isPause?null:songs.filter(function(x){return x.n===item.n;})[0];
-    if(!isPause) songPos++;
+    var isPause=item.pause;var s=isPause?null:songs.filter(function(x){return x.n===item.n;})[0];
+    if(!isPause)songPos++;
     var tr=document.createElement('tr');if(isPause)tr.className='pause-row';tr.draggable=true;tr.dataset.idx=idx;if(!isPause)tr.dataset.songN=item.n;
     tr.addEventListener('dragstart',function(){dragSrc=idx;tr.style.opacity='0.4';});
     tr.addEventListener('dragend',function(){tr.style.opacity='1';document.querySelectorAll('.setlist-table tbody tr').forEach(function(r){r.classList.remove('drag-over');});});
@@ -770,8 +725,7 @@ function renderSetlist(){
     var tdDrag=document.createElement('td');tdDrag.className='drag-handle';tdDrag.textContent='\u2807';
     var tdPos=document.createElement('td');tdPos.className='pos';tdPos.textContent=isPause?'\u2014':songPos;if(isPause)tdPos.style.color='#c8960a';
     var tdInfo=document.createElement('td');tdInfo.className='song-info';
-    var divT=document.createElement('div');divT.className='s-title';divT.textContent=isPause?'\u2615 Pause':(s?s.t:'?');
-    tdInfo.appendChild(divT);
+    var divT=document.createElement('div');divT.className='s-title';divT.textContent=isPause?'\u2615 Pause':(s?s.t:'?');tdInfo.appendChild(divT);
     if(!isPause&&s){var divA=document.createElement('div');divA.className='s-artist';divA.textContent=s.a;tdInfo.appendChild(divA);}
     var tdDur=document.createElement('td');tdDur.className='duration';
     var inp=document.createElement('input');inp.type='text';inp.className='dur-input';inp.placeholder=isPause?'Pause':'0:00';inp.value=item.dur;
@@ -794,77 +748,28 @@ function renderSetlist(){
 function updateTotal(){var t=0;setlist.forEach(function(i){if(!i.pause)t+=parseDur(i.dur);});document.getElementById('totalTime').textContent=formatTotal(t);}
 function syncSetlistDurInputs(sn,val){document.querySelectorAll('#setlistBody tr').forEach(function(tr){if(tr.dataset&&parseInt(tr.dataset.songN)===sn){var inp=tr.querySelector('.dur-input');if(inp&&inp!==document.activeElement)inp.value=val;}});}
 
-function shareSetlistWhatsApp(){var name=document.getElementById('setName').value||bandName+' Setliste';var lines=['*'+name+'*',''];var pos=0;setlist.forEach(function(item){if(item.pause){var pd=item.dur?'('+item.dur+' min)':'';lines.push('--- Pause '+pd+' ---');}else{pos++;var s=songs.filter(function(x){return x.n===item.n;})[0];if(!s)return;var dur=item.dur?'  ('+item.dur+' min)':'';lines.push(pos+'. '+s.t+dur);}});var total=0;setlist.forEach(function(i){if(!i.pause)total+=parseDur(i.dur);});if(total>0)lines.push('','Gesamtdauer: '+formatTotal(total)+' min');window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');}
+function shareSetlistWhatsApp(){var name=document.getElementById('setName').value||bandName+' Setliste';var lines=['*'+name+'*',''];var pos=0;setlist.forEach(function(item){if(item.pause){lines.push('--- Pause'+(item.dur?' ('+item.dur+' min)':'')+'---');}else{pos++;var s=songs.filter(function(x){return x.n===item.n;})[0];if(!s)return;lines.push(pos+'. '+s.t+(item.dur?' ('+item.dur+' min)':''));}});var t=0;setlist.forEach(function(i){if(!i.pause)t+=parseDur(i.dur);});if(t>0)lines.push('','Gesamtdauer: '+formatTotal(t)+' min');window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');}
 
-function printSetlistPDF(){
-  if(!setlist.length){alert('Die Setliste ist leer.');return;}
-  var name=document.getElementById('setName').value||bandName+' Setliste';
-  var totalSecs=0;setlist.forEach(function(item){if(!item.pause)totalSecs+=parseDur(item.dur);});
-  var rows='';var pos=0;
-  setlist.forEach(function(item){
-    if(item.pause){var pd=item.dur?item.dur+' min':'';rows+='<tr><td colspan="3" style="text-align:center;background:#fff8e1;color:#8a6000;font-style:italic;padding:7px 12px;font-size:13px;">&#9749; Pause'+(pd?' &nbsp;('+pd+')':'')+'</td></tr>';}
-    else{pos++;var s=songs.filter(function(x){return x.n===item.n;})[0];if(!s)return;var dur=item.dur||'';var bg=pos%2===0?'background:#f9f9f9;':'';rows+='<tr style="'+bg+'"><td style="text-align:center;font-weight:700;color:#378ADD;width:36px">'+pos+'</td><td><div style="font-weight:600;font-size:13px">'+s.t+'</div><div style="font-size:11px;color:#888">'+s.a+'</div></td><td style="text-align:center;font-size:13px;width:80px">'+(dur||'\u2014')+'</td></tr>';}
-  });
-  var phtml='<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>'+name+'</title><style>body{font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto;color:#222}h1{font-size:22px;font-weight:700;margin-bottom:4px}.meta{font-size:12px;color:#888;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#1a1a2e;color:#fff;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}td{padding:7px 12px;border-bottom:1px solid #eee}.footer{display:flex;justify-content:space-between;align-items:center;border-top:2px solid #1a1a2e;padding-top:12px;margin-top:4px}.total-label{font-size:12px;color:#555}.total-time{font-size:24px;font-weight:700;color:#1a1a2e}@media print{body{padding:16px}}</style></head><body><h1>'+name+'</h1><div class="meta">'+bandName+'&nbsp;|&nbsp;'+new Date().toLocaleDateString('de-DE')+'</div><table><thead><tr><th style="width:36px">#</th><th>Song</th><th style="width:80px;text-align:center">Dauer</th></tr></thead><tbody>'+rows+'</tbody></table><div class="footer"><div><div class="total-label">Gesamtdauer (ohne Pausen)</div></div><div class="total-time">'+formatTotal(totalSecs)+' min</div></div></body></html>';
-  var win=window.open('','_blank');win.document.write(phtml);win.document.close();win.focus();setTimeout(function(){win.print();},400);
-}
+function printSetlistPDF(){if(!setlist.length){alert('Die Setliste ist leer.');return;}var name=document.getElementById('setName').value||bandName+' Setliste';var totalSecs=0;setlist.forEach(function(item){if(!item.pause)totalSecs+=parseDur(item.dur);});var rows='';var pos=0;setlist.forEach(function(item){if(item.pause){var pd=item.dur?item.dur+' min':'';rows+='<tr><td colspan="3" style="text-align:center;background:#fff8e1;color:#8a6000;font-style:italic;padding:7px 12px;font-size:13px;">\u2615 Pause'+(pd?' ('+pd+')':'')+'</td></tr>';}else{pos++;var s=songs.filter(function(x){return x.n===item.n;})[0];if(!s)return;var dur=item.dur||'';var bg=pos%2===0?'background:#f9f9f9;':'';rows+='<tr style="'+bg+'"><td style="text-align:center;font-weight:700;color:#378ADD;width:36px">'+pos+'</td><td><div style="font-weight:600;font-size:13px">'+s.t+'</div><div style="font-size:11px;color:#888">'+s.a+'</div></td><td style="text-align:center;font-size:13px;width:80px">'+(dur||'\u2014')+'</td></tr>';}});var phtml='<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>'+name+'</title><style>body{font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto}h1{font-size:22px;font-weight:700;margin-bottom:4px}.meta{font-size:12px;color:#888;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#1a1a2e;color:#fff;padding:8px 12px;font-size:11px;text-transform:uppercase}td{padding:7px 12px;border-bottom:1px solid #eee}.footer{display:flex;justify-content:space-between;align-items:center;border-top:2px solid #1a1a2e;padding-top:12px}.total-time{font-size:24px;font-weight:700;color:#1a1a2e}@media print{body{padding:16px}}</style></head><body><h1>'+name+'</h1><div class="meta">'+bandName+'&nbsp;|&nbsp;'+new Date().toLocaleDateString('de-DE')+'</div><table><thead><tr><th style="width:36px">#</th><th>Song</th><th style="width:80px;text-align:center">Dauer</th></tr></thead><tbody>'+rows+'</tbody></table><div class="footer"><div style="font-size:12px;color:#555">Gesamtdauer (ohne Pausen)</div><div class="total-time">'+formatTotal(totalSecs)+' min</div></div></body></html>';var win=window.open('','_blank');win.document.write(phtml);win.document.close();win.focus();setTimeout(function(){win.print();},400);}
 
 // ── EINSTELLUNGEN ──
+var editingSongIdx = null;
+
 function renderSettingsPage() {
-  var badge = document.getElementById('adminBadge');
-  if (badge) { badge.style.display='inline'; badge.className=isAdmin?'admin-badge':'readonly-badge'; badge.textContent=isAdmin?'Admin':'Nur lesen'; }
-  var sub = document.getElementById('settingsSubtitle');
-  if (sub) sub.textContent = isAdmin ? 'Du bist als Admin eingeloggt.' : 'Nur lesen – Daten werden automatisch synchronisiert.';
-  document.getElementById('adminLoginCard').style.display = isAdmin ? 'none' : 'block';
-  document.getElementById('cardBandname').style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('cardSongs').style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('cardLogout').style.display = isAdmin ? 'block' : 'none';
-  if (!isAdmin) return;
-  var bi = document.getElementById('bandNameInput'); if(bi) bi.value = bandName;
+  var badge=document.getElementById('adminBadge');
+  if(badge){badge.style.display='inline';badge.className=isAdmin?'admin-badge':'readonly-badge';badge.textContent=isAdmin?'Admin':'Nur lesen';}
+  var sub=document.getElementById('settingsSubtitle');
+  if(sub)sub.textContent=isAdmin?'Du bist als Admin eingeloggt.':'Nur lesen \u2013 Daten werden automatisch synchronisiert.';
+  document.getElementById('adminLoginCard').style.display=isAdmin?'none':'block';
+  document.getElementById('cardBandname').style.display=isAdmin?'block':'none';
+  document.getElementById('cardSongs').style.display=isAdmin?'block':'none';
+  document.getElementById('cardLogout').style.display=isAdmin?'block':'none';
+  if(!isAdmin)return;
+  var bi=document.getElementById('bandNameInput');if(bi)bi.value=bandName;
   buildSongEditList();
 }
 
-function saveBandName(){
-  var val=document.getElementById('bandNameInput').value.trim();
-  if(!val)return;bandName=val;saveData();pushToCloud();updatePageTitle();showToast('Bandname gespeichert!');
-}
-function showToast(msg){
-  var t=document.getElementById('toast');if(!t)return;
-  t.textContent=msg;t.style.opacity='1';
-  clearTimeout(t._tmr);t._tmr=setTimeout(function(){t.style.opacity='0';},2200);
-}
-document.addEventListener('DOMContentLoaded',function(){
-  var m=document.getElementById('songModal');
-  if(m)m.addEventListener('click',function(e){if(e.target===this)closeModal();});
-});
-
-// ── EINSTELLUNGEN ──
-function renderSettingsPage(){
-  var bi=document.getElementById('bandNameInput');if(bi)bi.value=bandName;
-  var list=document.getElementById('songEditList');if(!list)return;
-  list.innerHTML='';
-  // If songs empty, try reloading from localStorage
-  if(!songs.length){
-    try{
-      var s=localStorage.getItem('blameit_songs');
-      if(s) songs=JSON.parse(s);
-    }catch(e){}
-  }
-  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden – tippe auf Aktualisieren.</p>';return;}
-  songs.forEach(function(s,idx){
-    var row=document.createElement('div');row.className='song-edit-row';
-    var num=document.createElement('div');num.className='song-edit-num';num.textContent=idx+1;
-    var info=document.createElement('div');info.className='song-edit-info';
-    var t=document.createElement('div');t.className='song-edit-title';t.textContent=s.t;
-    var a=document.createElement('div');a.className='song-edit-artist';a.textContent=s.a;
-    info.appendChild(t);info.appendChild(a);
-    var eb=document.createElement('button');eb.className='edit-btn';eb.textContent='\u270F Bearbeiten';
-    var db=document.createElement('button');db.className='edit-btn del';db.textContent='\uD83D\uDDD1 L\u00f6schen';
-    (function(i){eb.addEventListener('click',function(){openEditSong(i);});db.addEventListener('click',function(){deleteSong(i);});})(idx);
-    row.appendChild(num);row.appendChild(info);row.appendChild(eb);row.appendChild(db);
-    list.appendChild(row);
-  });
-}
+function saveBandName(){var val=document.getElementById('bandNameInput').value.trim();if(!val)return;bandName=val;saveData();pushToCloud();updatePageTitle();showToast('Bandname gespeichert!');}
 
 function openEditSong(idx){
   editingSongIdx=idx;var s=songs[idx];
@@ -894,14 +799,10 @@ function saveModalSong(){
   showToast(editingSongIdx!==null?'Song gespeichert!':'Song hinzugef\u00fcgt!');
 }
 function deleteSong(idx){
-  var s=songs[idx];
-  if(!confirm('Song "'+s.t+'" wirklich l\u00f6schen?'))return;
-  songs.splice(idx,1);saveData();renderSettingsPage();rebuildGrids();showToast('Song gel\u00f6scht.');
+  var s=songs[idx];if(!confirm('Song "'+s.t+'" wirklich l\u00f6schen?'))return;
+  songs.splice(idx,1);saveData();pushToCloud();if(isAdmin)buildSongEditList();rebuildGrids();showToast('Song gel\u00f6scht.');
 }
-function saveBandName(){
-  var val=document.getElementById('bandNameInput').value.trim();
-  if(!val)return;bandName=val;saveData();pushToCloud();updatePageTitle();showToast('Bandname gespeichert!');
-}
+
 function showToast(msg){
   var t=document.getElementById('toast');if(!t)return;
   t.textContent=msg;t.style.opacity='1';
@@ -911,49 +812,38 @@ document.addEventListener('DOMContentLoaded',function(){
   var m=document.getElementById('songModal');
   if(m)m.addEventListener('click',function(e){if(e.target===this)closeModal();});
 });
-
 </script>
 
 <!-- SEITE 4: SONGTEXTE -->
 <div class="page" id="pageLyrics">
   <h1>&#127908; Songtexte</h1>
-  <p class="subtitle">Song ausw&#228;hlen &#8211; Metronom oben rechts, Text scrollt automatisch.</p>
+  <p class="subtitle">Nur Songs mit Gesang &#8211; Song ausw&#228;hlen, dann Text eingeben und speichern.</p>
   <div class="lyrics-layout">
-    <!-- Linke Seite: Songliste -->
     <div class="lyrics-songlist" id="lyricsSongList"></div>
-    <!-- Rechte Seite: Editor / Teleprompter -->
     <div class="lyrics-editor" id="lyricsEditor">
-      <!-- Header mit Titel + Metronom -->
       <div class="lyrics-editor-header" id="lyricsEditorHeader" style="display:none">
         <div style="flex:1;min-width:0">
           <div class="lyrics-editor-title" id="lyricsEditorTitle"></div>
           <div class="lyrics-editor-sub" id="lyricsEditorSub"></div>
         </div>
-        <!-- Metronom -->
         <div class="metro-bar" id="metroBar">
           <div class="metro-beat" id="metroBeat"></div>
           <span class="metro-bpm-label">BPM</span>
           <input type="number" class="metro-bpm-inp" id="metroBpm" value="120" min="40" max="300">
-          <button class="metro-btn" id="metroBtn" onclick="toggleMetronome()" title="Metronom Start/Stop">&#9654;</button>
+          <button class="metro-btn" id="metroBtn" onclick="toggleMetronome()" title="Metronom">&#9654;</button>
         </div>
-        <!-- Modus-Buttons -->
         <div style="display:flex;gap:4px">
           <button class="mode-btn active" id="btnEdit" onclick="setMode('edit')">Bearbeiten</button>
           <button class="mode-btn" id="btnTele" onclick="setMode('tele')">Teleprompter</button>
         </div>
       </div>
-      <!-- Leer-Zustand -->
-      <div class="lyrics-editor-empty" id="lyricsEditorEmpty">
-        &#8592; Song ausw&#228;hlen
-      </div>
-      <!-- Edit Modus -->
+      <div class="lyrics-editor-empty" id="lyricsEditorEmpty">&#8592; Song ausw&#228;hlen</div>
       <textarea class="lyrics-textarea" id="lyricsTextarea" placeholder="Songtext hier eingeben..." style="display:none"></textarea>
       <div class="lyrics-editor-footer" id="lyricsEditorFooter" style="display:none">
         <span class="lyrics-char-count" id="lyricsCharCount">0 Zeichen</span>
         <button class="btn primary" id="lyricsSaveBtn" onclick="saveLyrics()">&#10003; Speichern</button>
         <button class="btn reset" id="lyricsClearBtn" onclick="clearLyrics()">Text l&#246;schen</button>
       </div>
-      <!-- Teleprompter Modus -->
       <div class="teleprompter" id="teleprompter" style="display:none">
         <div class="teleprompter-fade-top"></div>
         <div class="teleprompter-inner" id="teleInner"></div>
@@ -976,7 +866,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <script>
 // SONGTEXTE + TELEPROMPTER + METRONOM
 var currentLyricsSongN = null;
-var lyricsMode = 'edit'; // 'edit' or 'tele'
+var lyricsMode = 'edit';
 var metroRunning = false;
 var metroCtx = null;
 var metroTimer = null;
@@ -985,282 +875,128 @@ var scrollTimer = null;
 var scrollPos = 0;
 
 function renderLyricsPage() {
-  var list = document.getElementById('lyricsSongList');
-  if (!list) return;
-  list.innerHTML = '';
-  var vocalSongs = songs.filter(function(s){ return s.instr && s.instr.indexOf('Gesang') !== -1; });
-  if (!vocalSongs.length) {
-    list.innerHTML = '<p style="color:#aaa;font-size:13px;padding:12px">Keine Songs mit Gesang.</p>';
-    return;
-  }
-  vocalSongs.forEach(function(s) {
-    var item = document.createElement('div');
-    item.className = 'lyrics-song-item' + (getLyrics(s.n) ? ' has-text' : '') + (currentLyricsSongN===s.n ? ' active' : '');
-    item.id = 'lsi-' + s.n;
-    var num = document.createElement('div'); num.className = 'lsi-num'; num.textContent = '#' + s.n;
-    var title = document.createElement('div'); title.className = 'lsi-title'; title.textContent = s.t;
-    var artist = document.createElement('div'); artist.className = 'lsi-artist'; artist.textContent = s.a;
-    item.appendChild(num); item.appendChild(title); item.appendChild(artist);
-    (function(sn){ item.addEventListener('click', function(){ openLyricsEditor(sn); }); })(s.n);
+  var list=document.getElementById('lyricsSongList'); if(!list)return;
+  list.innerHTML='';
+  var vocalSongs=songs.filter(function(s){return s.instr&&s.instr.indexOf('Gesang')!==-1;});
+  if(!vocalSongs.length){list.innerHTML='<p style="color:#aaa;font-size:13px;padding:12px">Keine Songs mit Gesang.</p>';return;}
+  vocalSongs.forEach(function(s){
+    var item=document.createElement('div');
+    item.className='lyrics-song-item'+(getLyrics(s.n)?' has-text':'')+(currentLyricsSongN===s.n?' active':'');
+    item.id='lsi-'+s.n;
+    var num=document.createElement('div');num.className='lsi-num';num.textContent='#'+s.n;
+    var title=document.createElement('div');title.className='lsi-title';title.textContent=s.t;
+    var artist=document.createElement('div');artist.className='lsi-artist';artist.textContent=s.a;
+    item.appendChild(num);item.appendChild(title);item.appendChild(artist);
+    (function(sn){item.addEventListener('click',function(){openLyricsEditor(sn);});})(s.n);
     list.appendChild(item);
   });
-  if (currentLyricsSongN !== null) openLyricsEditor(currentLyricsSongN);
+  if(currentLyricsSongN!==null)openLyricsEditor(currentLyricsSongN);
 }
 
-function getLyrics(n) {
-  try { return localStorage.getItem('blameit_lyrics_' + n) || ''; } catch(e){ return ''; }
-}
-function saveLyricsData(n, text) {
-  try { localStorage.setItem('blameit_lyrics_' + n, text); } catch(e){}
-}
+function getLyrics(n){try{return localStorage.getItem('blameit_lyrics_'+n)||'';}catch(e){return '';}}
+function saveLyricsData(n,text){try{localStorage.setItem('blameit_lyrics_'+n,text);}catch(e){}}
+function getLyricsBpm(n){try{return parseInt(localStorage.getItem('blameit_bpm_'+n))||120;}catch(e){return 120;}}
+function saveLyricsBpm(n,bpm){try{localStorage.setItem('blameit_bpm_'+n,bpm);}catch(e){}}
+function getLyricsFine(n){try{return parseFloat(localStorage.getItem('blameit_fine_'+n))||1.0;}catch(e){return 1.0;}}
+function saveLyricsFine(n,fine){try{localStorage.setItem('blameit_fine_'+n,fine);}catch(e){}}
 
-function getLyricsBpm(n) {
-  try { return parseInt(localStorage.getItem('blameit_bpm_' + n)) || 120; } catch(e){ return 120; }
-}
-function saveLyricsBpm(n, bpm) {
-  try { localStorage.setItem('blameit_bpm_' + n, bpm); } catch(e){}
-}
-function getLyricsFine(n) {
-  try { return parseFloat(localStorage.getItem('blameit_fine_' + n)) || 1.0; } catch(e){ return 1.0; }
-}
-function saveLyricsFine(n, fine) {
-  try { localStorage.setItem('blameit_fine_' + n, fine); } catch(e){}
-}
-
-function openLyricsEditor(n) {
-  stopMetronome();
-  stopScroll();
-  currentLyricsSongN = n;
-  var s = songs.filter(function(x){ return x.n === n; })[0];
-  if (!s) return;
-  document.querySelectorAll('.lyrics-song-item').forEach(function(el){ el.classList.remove('active'); });
-  var item = document.getElementById('lsi-' + n);
-  if (item) item.classList.add('active');
-  document.getElementById('lyricsEditorHeader').style.display = 'flex';
-  document.getElementById('lyricsEditorTitle').textContent = s.t;
-  document.getElementById('lyricsEditorSub').textContent = s.a;
-  document.getElementById('lyricsEditorEmpty').style.display = 'none';
-  // Load BPM + Feinabstimmung
-  document.getElementById('metroBpm').value = getLyricsBpm(n);
-  var fine = getLyricsFine(n);
-  var sp = document.getElementById('scrollSpeed');
-  if (sp) { sp.value = fine; document.getElementById('speedVal').textContent = 'x' + fine.toFixed(1); }
-  // Set edit mode
+function openLyricsEditor(n){
+  stopMetronome();stopScroll();
+  currentLyricsSongN=n;
+  var s=songs.filter(function(x){return x.n===n;})[0]; if(!s)return;
+  document.querySelectorAll('.lyrics-song-item').forEach(function(el){el.classList.remove('active');});
+  var item=document.getElementById('lsi-'+n); if(item)item.classList.add('active');
+  document.getElementById('lyricsEditorHeader').style.display='flex';
+  document.getElementById('lyricsEditorTitle').textContent=s.t;
+  document.getElementById('lyricsEditorSub').textContent=s.a;
+  document.getElementById('lyricsEditorEmpty').style.display='none';
+  document.getElementById('metroBpm').value=getLyricsBpm(n);
+  var fine=getLyricsFine(n);
+  var sp=document.getElementById('scrollSpeed'); if(sp){sp.value=fine;document.getElementById('speedVal').textContent='x'+fine.toFixed(1);}
   setMode(lyricsMode);
 }
 
-function setMode(mode) {
-  lyricsMode = mode;
-  var isEdit = mode === 'edit';
-  document.getElementById('btnEdit').classList.toggle('active', isEdit);
-  document.getElementById('btnTele').classList.toggle('active', !isEdit);
-  // Edit mode elements
-  document.getElementById('lyricsTextarea').style.display = isEdit ? 'block' : 'none';
-  document.getElementById('lyricsEditorFooter').style.display = isEdit ? 'flex' : 'none';
-  // Tele mode elements
-  document.getElementById('teleprompter').style.display = isEdit ? 'none' : 'block';
-  document.getElementById('teleControls').style.display = isEdit ? 'none' : 'flex';
-  if (isEdit) {
+function setMode(mode){
+  lyricsMode=mode; var isEdit=mode==='edit';
+  document.getElementById('btnEdit').classList.toggle('active',isEdit);
+  document.getElementById('btnTele').classList.toggle('active',!isEdit);
+  document.getElementById('lyricsTextarea').style.display=isEdit?'block':'none';
+  document.getElementById('lyricsEditorFooter').style.display=isEdit?'flex':'none';
+  document.getElementById('teleprompter').style.display=isEdit?'none':'block';
+  document.getElementById('teleControls').style.display=isEdit?'none':'flex';
+  if(isEdit){
     stopScroll();
-    var ta = document.getElementById('lyricsTextarea');
-    ta.value = getLyrics(currentLyricsSongN);
-    ta.readOnly = !isAdmin;
-    ta.style.color = isAdmin ? '' : '#999';
-    ta.placeholder = isAdmin ? 'Songtext hier eingeben...' : '(Nur lesen – kein Admin-Zugang)';
-    var saveBtn = document.getElementById('lyricsSaveBtn');
-    var clearBtn = document.getElementById('lyricsClearBtn');
-    if (saveBtn) saveBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-    if (clearBtn) clearBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-    updateLyricsCount();
-    if (isAdmin) ta.focus();
+    var ta=document.getElementById('lyricsTextarea');
+    ta.value=getLyrics(currentLyricsSongN);
+    ta.readOnly=!isAdmin; ta.style.color=isAdmin?'':'#999';
+    var saveBtn=document.getElementById('lyricsSaveBtn'),clearBtn=document.getElementById('lyricsClearBtn');
+    if(saveBtn)saveBtn.style.display=isAdmin?'inline-flex':'none';
+    if(clearBtn)clearBtn.style.display=isAdmin?'inline-flex':'none';
+    updateLyricsCount(); if(isAdmin)ta.focus();
   } else {
-    // Show teleprompter - text starts at top, padding-bottom pushes it so
-    // initial view shows beginning of text
-    var text = getLyrics(currentLyricsSongN) || '(Kein Text vorhanden)';
-    document.getElementById('teleInner').textContent = text;
-    // Reset scroll to top so text starts from beginning
-    var tele = document.getElementById('teleprompter');
-    scrollPos = 0;
-    if (tele) tele.scrollTop = 0;
-    var btn = document.getElementById('telePlayBtn');
-    if (btn) btn.innerHTML = '&#9654; Start';
-    scrollRunning = false;
-    updateBpmSpeedInfo();
+    var text=getLyrics(currentLyricsSongN)||'(Kein Text vorhanden)';
+    document.getElementById('teleInner').textContent=text;
+    var tele=document.getElementById('teleprompter'); scrollPos=0; if(tele)tele.scrollTop=0;
+    var btn=document.getElementById('telePlayBtn'); if(btn)btn.innerHTML='&#9654; Start';
+    scrollRunning=false; updateBpmSpeedInfo();
   }
 }
 
-function saveLyrics() {
-  if (currentLyricsSongN === null) return;
-  var text = document.getElementById('lyricsTextarea').value;
-  saveLyricsData(currentLyricsSongN, text);
-  var item = document.getElementById('lsi-' + currentLyricsSongN);
-  if (item) { if (text.trim()) item.classList.add('has-text'); else item.classList.remove('has-text'); }
-  pushToCloud();
-  showToast('Songtext gespeichert!');
+function saveLyrics(){
+  if(currentLyricsSongN===null)return;
+  var text=document.getElementById('lyricsTextarea').value;
+  saveLyricsData(currentLyricsSongN,text);
+  var item=document.getElementById('lsi-'+currentLyricsSongN);
+  if(item){if(text.trim())item.classList.add('has-text');else item.classList.remove('has-text');}
+  pushToCloud(); showToast('Songtext gespeichert!');
 }
-
-function clearLyrics() {
-  if (currentLyricsSongN === null) return;
-  if (!confirm('Songtext wirklich loeschen?')) return;
-  saveLyricsData(currentLyricsSongN, '');
-  document.getElementById('lyricsTextarea').value = '';
-  var item = document.getElementById('lsi-' + currentLyricsSongN);
-  if (item) item.classList.remove('has-text');
-  updateLyricsCount();
-  showToast('Text geloescht.');
+function clearLyrics(){
+  if(currentLyricsSongN===null)return;
+  if(!confirm('Songtext wirklich l\u00f6schen?'))return;
+  saveLyricsData(currentLyricsSongN,'');
+  document.getElementById('lyricsTextarea').value='';
+  var item=document.getElementById('lsi-'+currentLyricsSongN); if(item)item.classList.remove('has-text');
+  updateLyricsCount(); showToast('Text gel\u00f6scht.');
 }
+function updateLyricsCount(){var ta=document.getElementById('lyricsTextarea'),cc=document.getElementById('lyricsCharCount');if(ta&&cc)cc.textContent=ta.value.length+' Zeichen';}
 
-function updateLyricsCount() {
-  var ta = document.getElementById('lyricsTextarea');
-  var cc = document.getElementById('lyricsCharCount');
-  if (ta && cc) cc.textContent = ta.value.length + ' Zeichen';
+function resetScroll(){stopScroll();scrollPos=0;var tele=document.getElementById('teleprompter');if(tele)tele.scrollTop=0;var btn=document.getElementById('telePlayBtn');if(btn)btn.innerHTML='&#9654; Start';}
+function toggleScroll(){if(scrollRunning)stopScroll();else startScroll();}
+function getScrollSpeed(){var bpm=parseInt(document.getElementById('metroBpm').value)||120;var fine=parseFloat(document.getElementById('scrollSpeed').value)||1.0;var base=(bpm-40)/(300-40)*(2.5-0.2)+0.2;return base*fine;}
+function startScroll(){
+  scrollRunning=true; document.getElementById('telePlayBtn').innerHTML='&#9646;&#9646; Pause';
+  var tele=document.getElementById('teleprompter');
+  function step(){if(!scrollRunning)return;scrollPos+=getScrollSpeed();var maxScroll=tele.scrollHeight-tele.clientHeight;if(scrollPos>=maxScroll){tele.scrollTop=maxScroll;stopScroll();return;}tele.scrollTop=scrollPos;scrollTimer=requestAnimationFrame(step);}
+  scrollTimer=requestAnimationFrame(step);
 }
+function stopScroll(){scrollRunning=false;if(scrollTimer){cancelAnimationFrame(scrollTimer);scrollTimer=null;}var tele=document.getElementById('teleprompter');if(tele)scrollPos=tele.scrollTop;var btn=document.getElementById('telePlayBtn');if(btn)btn.innerHTML='&#9654; Start';}
+function updateBpmSpeedInfo(){var info=document.getElementById('bpmSpeedInfo');if(!info)return;var bpm=parseInt(document.getElementById('metroBpm').value)||120;var fine=parseFloat(document.getElementById('scrollSpeed').value)||1.0;var base=(bpm-40)/(300-40)*(2.5-0.2)+0.2;info.textContent=bpm+' BPM \u2192 '+(base*fine).toFixed(2)+' px/frame';}
 
-// ── TELEPROMPTER ──
-// Text starts at BOTTOM, scrolls UP. Container scrolls naturally via scrollTop.
-function initTeleprompter() {
-  var tele = document.getElementById('teleprompter');
-  if (!tele) return;
-  // Start at top (scrollTop = 0 = text at top, we want text to start at bottom)
-  // We use a different approach: pad top so text starts below visible area
-  tele.scrollTop = 0;
-  scrollPos = 0;
-}
-
-function resetScroll() {
-  stopScroll();
-  scrollPos = 0;
-  var tele = document.getElementById('teleprompter');
-  if (tele) tele.scrollTop = 0;
-  var btn = document.getElementById('telePlayBtn');
-  if (btn) btn.innerHTML = '&#9654; Start';
-}
-
-function toggleScroll() {
-  if (scrollRunning) stopScroll(); else startScroll();
-}
-
-function getScrollSpeed() {
-  // Base speed from BPM: 60 BPM = slow, 180 BPM = fast
-  // Multiplied by the manual fine-tune slider (0.5x - 2x)
-  var bpm = parseInt(document.getElementById('metroBpm').value) || 120;
-  var fine = parseFloat(document.getElementById('scrollSpeed').value) || 1.0;
-  // Map BPM 40-300 to pixels-per-frame 0.2-2.5, then multiply by fine tune
-  var base = (bpm - 40) / (300 - 40) * (2.5 - 0.2) + 0.2;
-  return base * fine;
-}
-
-function startScroll() {
-  scrollRunning = true;
-  document.getElementById('telePlayBtn').innerHTML = '&#9646;&#9646; Pause';
-  var tele = document.getElementById('teleprompter');
-  function step() {
-    if (!scrollRunning) return;
-    scrollPos += getScrollSpeed();
-    var maxScroll = tele.scrollHeight - tele.clientHeight;
-    if (scrollPos >= maxScroll) {
-      tele.scrollTop = maxScroll;
-      stopScroll();
-      return;
-    }
-    tele.scrollTop = scrollPos;
-    scrollTimer = requestAnimationFrame(step);
-  }
-  scrollTimer = requestAnimationFrame(step);
-}
-
-function stopScroll() {
-  scrollRunning = false;
-  if (scrollTimer) { cancelAnimationFrame(scrollTimer); scrollTimer = null; }
-  var tele = document.getElementById('teleprompter');
-  if (tele) scrollPos = tele.scrollTop; // sync position if user scrolled manually
-  var btn = document.getElementById('telePlayBtn');
-  if (btn) btn.innerHTML = '&#9654; Start';
-}
-
-document.addEventListener('DOMContentLoaded', function(){
-  var sp = document.getElementById('scrollSpeed');
-  if (sp) sp.addEventListener('input', function(){
-    var val = parseFloat(sp.value);
-    document.getElementById('speedVal').textContent = 'x' + val.toFixed(1);
-    if (currentLyricsSongN !== null) saveLyricsFine(currentLyricsSongN, val);
-    updateBpmSpeedInfo();
-  });
-  var ta = document.getElementById('lyricsTextarea');
-  if (ta) ta.addEventListener('input', updateLyricsCount);
-  var bpmInp = document.getElementById('metroBpm');
-  if (bpmInp) bpmInp.addEventListener('change', function(){
-    if (currentLyricsSongN !== null) saveLyricsBpm(currentLyricsSongN, parseInt(bpmInp.value)||120);
-    if (metroRunning) { stopMetronome(); startMetronome(); }
-    updateBpmSpeedInfo();
-  });
-  if (bpmInp) bpmInp.addEventListener('input', function(){ updateBpmSpeedInfo(); });
-  // Sync manual scroll position so auto-scroll continues from there
-  var tele = document.getElementById('teleprompter');
-  if (tele) {
-    tele.addEventListener('scroll', function(){
-      if (!scrollRunning) scrollPos = tele.scrollTop;
-    });
-    // Touch: allow manual drag while paused
-    tele.addEventListener('touchstart', function(){ if (scrollRunning) stopScroll(); }, {passive:true});
-  }
-});
-
-function updateBpmSpeedInfo() {
-  var info = document.getElementById('bpmSpeedInfo');
-  if (!info) return;
-  var bpm = parseInt(document.getElementById('metroBpm').value) || 120;
-  var fine = parseFloat(document.getElementById('scrollSpeed').value) || 1.0;
-  var base = (bpm - 40) / (300 - 40) * (2.5 - 0.2) + 0.2;
-  var speed = (base * fine).toFixed(2);
-  info.textContent = bpm + ' BPM → ' + speed + ' px/frame';
-}
-
-// ── METRONOM ──
-function toggleMetronome() {
-  if (metroRunning) stopMetronome(); else startMetronome();
-}
-
-function startMetronome() {
-  var bpm = parseInt(document.getElementById('metroBpm').value) || 120;
-  if (bpm < 20) bpm = 20; if (bpm > 400) bpm = 400;
-  metroRunning = true;
-  document.getElementById('metroBtn').classList.add('running');
-  document.getElementById('metroBtn').innerHTML = '&#9646;&#9646;';
-  var interval = 60000 / bpm;
-  // Use AudioContext for precise click sound
-  try {
-    metroCtx = new (window.AudioContext || window.webkitAudioContext)();
-  } catch(e){ metroCtx = null; }
-  function tick() {
-    if (!metroRunning) return;
-    // Flash beat indicator
-    var beat = document.getElementById('metroBeat');
-    if (beat) { beat.classList.add('on'); setTimeout(function(){ beat.classList.remove('on'); }, 80); }
-    // Click sound
-    if (metroCtx) {
-      var osc = metroCtx.createOscillator();
-      var gain = metroCtx.createGain();
-      osc.connect(gain); gain.connect(metroCtx.destination);
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.4, metroCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, metroCtx.currentTime + 0.06);
-      osc.start(metroCtx.currentTime);
-      osc.stop(metroCtx.currentTime + 0.06);
-    }
-    metroTimer = setTimeout(tick, interval);
+function toggleMetronome(){if(metroRunning)stopMetronome();else startMetronome();}
+function startMetronome(){
+  var bpm=parseInt(document.getElementById('metroBpm').value)||120;
+  metroRunning=true; document.getElementById('metroBtn').classList.add('running'); document.getElementById('metroBtn').innerHTML='&#9646;&#9646;';
+  var interval=60000/bpm;
+  try{metroCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){metroCtx=null;}
+  function tick(){
+    if(!metroRunning)return;
+    var beat=document.getElementById('metroBeat');if(beat){beat.classList.add('on');setTimeout(function(){beat.classList.remove('on');},80);}
+    if(metroCtx){var osc=metroCtx.createOscillator(),gain=metroCtx.createGain();osc.connect(gain);gain.connect(metroCtx.destination);osc.frequency.value=880;gain.gain.setValueAtTime(0.4,metroCtx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,metroCtx.currentTime+0.06);osc.start(metroCtx.currentTime);osc.stop(metroCtx.currentTime+0.06);}
+    metroTimer=setTimeout(tick,interval);
   }
   tick();
 }
+function stopMetronome(){metroRunning=false;if(metroTimer){clearTimeout(metroTimer);metroTimer=null;}var btn=document.getElementById('metroBtn');if(btn){btn.classList.remove('running');btn.innerHTML='&#9654;';}var beat=document.getElementById('metroBeat');if(beat)beat.classList.remove('on');}
 
-function stopMetronome() {
-  metroRunning = false;
-  if (metroTimer) { clearTimeout(metroTimer); metroTimer = null; }
-  var btn = document.getElementById('metroBtn');
-  if (btn) { btn.classList.remove('running'); btn.innerHTML = '&#9654;'; }
-  var beat = document.getElementById('metroBeat');
-  if (beat) beat.classList.remove('on');
-}
+document.addEventListener('DOMContentLoaded',function(){
+  var sp=document.getElementById('scrollSpeed');
+  if(sp)sp.addEventListener('input',function(){var val=parseFloat(sp.value);document.getElementById('speedVal').textContent='x'+val.toFixed(1);if(currentLyricsSongN!==null)saveLyricsFine(currentLyricsSongN,val);updateBpmSpeedInfo();});
+  var ta=document.getElementById('lyricsTextarea'); if(ta)ta.addEventListener('input',updateLyricsCount);
+  var bpmInp=document.getElementById('metroBpm');
+  if(bpmInp){bpmInp.addEventListener('change',function(){if(currentLyricsSongN!==null)saveLyricsBpm(currentLyricsSongN,parseInt(bpmInp.value)||120);if(metroRunning){stopMetronome();startMetronome();}updateBpmSpeedInfo();});bpmInp.addEventListener('input',function(){updateBpmSpeedInfo();});}
+  var tele=document.getElementById('teleprompter');
+  if(tele){tele.addEventListener('scroll',function(){if(!scrollRunning)scrollPos=tele.scrollTop;});tele.addEventListener('touchstart',function(){if(scrollRunning)stopScroll();},{passive:true});}
+});
 </script>
 
 </body>
