@@ -443,17 +443,64 @@ function checkAdminPw() {
     setAdminState(true);
     inp.value = '';
     document.getElementById('adminPwError').style.display = 'none';
-    renderSettingsPage();
+    document.getElementById('adminLoginCard').style.display = 'none';
+    document.getElementById('cardBandname').style.display = 'block';
+    document.getElementById('cardSongs').style.display = 'block';
+    document.getElementById('cardLogout').style.display = 'block';
+    var badge = document.getElementById('adminBadge');
+    if (badge) { badge.style.display = 'inline'; badge.className = 'admin-badge'; badge.textContent = 'Admin'; }
+    var sub = document.getElementById('settingsSubtitle');
+    if (sub) sub.textContent = 'Du bist als Admin eingeloggt.';
+    var bi = document.getElementById('bandNameInput');
+    if (bi) bi.value = bandName;
+    if (!songs.length) {
+      try { var s = localStorage.getItem('blameit_songs'); if(s) songs=JSON.parse(s); } catch(e){}
+    }
+    if (!songs.length) {
+      songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
+    }
+    buildSongEditList();
     showToast('Admin-Modus aktiviert!');
   } else {
     document.getElementById('adminPwError').style.display = 'block';
   }
 }
 
+function buildSongEditList() {
+  var list = document.getElementById('songEditList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!songs.length) {
+    list.innerHTML = '<p style="color:#aaa;font-size:13px">Keine Songs gefunden.</p>';
+    return;
+  }
+  songs.forEach(function(s, idx) {
+    var row = document.createElement('div'); row.className = 'song-edit-row';
+    var num = document.createElement('div'); num.className = 'song-edit-num'; num.textContent = idx+1;
+    var info = document.createElement('div'); info.className = 'song-edit-info';
+    var t = document.createElement('div'); t.className = 'song-edit-title'; t.textContent = s.t;
+    var a = document.createElement('div'); a.className = 'song-edit-artist'; a.textContent = s.a;
+    info.appendChild(t); info.appendChild(a);
+    var eb = document.createElement('button'); eb.className = 'edit-btn'; eb.textContent = 'Bearbeiten';
+    var db = document.createElement('button'); db.className = 'edit-btn del'; db.textContent = 'Loeschen';
+    (function(i){
+      eb.addEventListener('click', function(){ openEditSong(i); });
+      db.addEventListener('click', function(){ deleteSong(i); });
+    })(idx);
+    row.appendChild(num); row.appendChild(info); row.appendChild(eb); row.appendChild(db);
+    list.appendChild(row);
+  });
+}
+
 function adminLogout() {
   isAdmin = false;
   setAdminState(false);
-  renderSettingsPage();
+  document.getElementById('adminLoginCard').style.display = 'block';
+  document.getElementById('cardBandname').style.display = 'none';
+  document.getElementById('cardSongs').style.display = 'none';
+  document.getElementById('cardLogout').style.display = 'none';
+  var badge = document.getElementById('adminBadge');
+  if (badge) { badge.style.display='inline'; badge.className='readonly-badge'; badge.textContent='Nur lesen'; }
   showToast('Ausgeloggt.');
 }
 
@@ -765,50 +812,16 @@ function printSetlistPDF(){
 // ── EINSTELLUNGEN ──
 function renderSettingsPage() {
   var badge = document.getElementById('adminBadge');
+  if (badge) { badge.style.display='inline'; badge.className=isAdmin?'admin-badge':'readonly-badge'; badge.textContent=isAdmin?'Admin':'Nur lesen'; }
   var sub = document.getElementById('settingsSubtitle');
-  if (badge) {
-    badge.style.display = 'inline';
-    badge.className = isAdmin ? 'admin-badge' : 'readonly-badge';
-    badge.textContent = isAdmin ? 'Admin' : 'Nur lesen';
-  }
-  if (sub) sub.textContent = isAdmin
-    ? 'Du bist als Admin eingeloggt – du kannst alles bearbeiten.'
-    : 'Nur lesen – Daten werden automatisch synchronisiert.';
-  ['cardBandname','cardSongs','cardLogout'].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.style.display=isAdmin?'block':'none';
-  });
-  var lc = document.getElementById('adminLoginCard');
-  if (lc) lc.style.display = isAdmin ? 'none' : 'block';
-  var pi = document.getElementById('adminPwInput');
-  if (pi) pi.value = '';
+  if (sub) sub.textContent = isAdmin ? 'Du bist als Admin eingeloggt.' : 'Nur lesen – Daten werden automatisch synchronisiert.';
+  document.getElementById('adminLoginCard').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('cardBandname').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('cardSongs').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('cardLogout').style.display = isAdmin ? 'block' : 'none';
   if (!isAdmin) return;
-  var bi=document.getElementById('bandNameInput'); if(bi) bi.value=bandName;
-  var list=document.getElementById('songEditList'); if(!list) return;
-  list.innerHTML='';
-  // If songs empty, try reloading from localStorage
-  if(!songs.length){
-    try{
-      var s=localStorage.getItem('blameit_songs');
-      if(s) songs=JSON.parse(s);
-    }catch(e){}
-  }
-  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden – tippe auf Aktualisieren.</p>';return;}
-  songs.forEach(function(s,idx){
-    var row=document.createElement('div'); row.className='song-edit-row';
-    var num=document.createElement('div'); num.className='song-edit-num'; num.textContent=idx+1;
-    var info=document.createElement('div'); info.className='song-edit-info';
-    var t=document.createElement('div'); t.className='song-edit-title'; t.textContent=s.t;
-    var a=document.createElement('div'); a.className='song-edit-artist'; a.textContent=s.a;
-    info.appendChild(t); info.appendChild(a);
-    var eb=document.createElement('button'); eb.className='edit-btn'; eb.textContent='Bearbeiten';
-    var db=document.createElement('button'); db.className='edit-btn del'; db.textContent='Loeschen';
-    (function(i){
-      eb.addEventListener('click',function(){openEditSong(i);});
-      db.addEventListener('click',function(){deleteSong(i);});
-    })(idx);
-    row.appendChild(num);row.appendChild(info);row.appendChild(eb);row.appendChild(db);
-    list.appendChild(row);
-  });
+  var bi = document.getElementById('bandNameInput'); if(bi) bi.value = bandName;
+  buildSongEditList();
 }
 
 function saveBandName(){
@@ -877,7 +890,7 @@ function saveModalSong(){
   var instr=[];['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){if(document.getElementById('chk'+i).checked)instr.push(i);});
   if(editingSongIdx!==null){songs[editingSongIdx].t=t;songs[editingSongIdx].a=a;songs[editingSongIdx].instr=instr;}
   else{var maxN=songs.reduce(function(m,s){return Math.max(m,s.n);},0);songs.push({n:maxN+1,t:t,a:a,instr:instr});}
-  saveData();pushToCloud();closeModal();renderSettingsPage();rebuildGrids();
+  saveData();pushToCloud();closeModal();if(isAdmin)buildSongEditList();rebuildGrids();
   showToast(editingSongIdx!==null?'Song gespeichert!':'Song hinzugef\u00fcgt!');
 }
 function deleteSong(idx){
