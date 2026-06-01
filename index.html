@@ -439,6 +439,13 @@ function checkAdminPw(){
   if(inp.value===ADMIN_PW_HASH){
     isAdmin=true;setAdminState(true);
     document.getElementById('adminPwError').style.display='none';
+    // Ensure songs loaded from localStorage before rendering
+    if(!songs.length){
+      try{var s=localStorage.getItem('blameit_songs');if(s)songs=JSON.parse(s);}catch(e){}
+    }
+    if(!songs.length){
+      songs=DEFAULT_SONGS.map(function(x){return{n:x.n,t:x.t,a:x.a,instr:x.instr.slice()};});
+    }
     renderSettingsPage();showToast('Admin-Modus aktiviert!');
   }else{document.getElementById('adminPwError').style.display='block';}
 }
@@ -467,7 +474,11 @@ function buildCloudPayload(){
 
 function syncFromCloud(){
   var binId=getBinId();
-  if(!binId){setSyncStatus('err','Noch kein Band-Datenspeicher – Admin muss einmalig speichern.');return;}
+  if(!binId){
+    setSyncStatus('err','Noch kein Band-Datenspeicher – als Admin einloggen und speichern.');
+    if(document.getElementById('pageSettings')&&document.getElementById('pageSettings').classList.contains('active')){renderSettingsPage();}
+    return;
+  }
   setSyncStatus('loading','Synchronisiere...');
   fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{
     headers:{'X-Master-Key':JSONBIN_KEY}
@@ -481,6 +492,10 @@ function syncFromCloud(){
       if(rec.fine)Object.keys(rec.fine).forEach(function(k){try{localStorage.setItem('blameit_fine_'+k,rec.fine[k]);}catch(e){}});
       saveData();updatePageTitle();rebuildGrids();
       setSyncStatus('ok','Synchronisiert – '+new Date().toLocaleTimeString('de-DE'));
+      // Re-render settings if open so song list updates after sync
+      if (document.getElementById('pageSettings') && document.getElementById('pageSettings').classList.contains('active')) {
+        renderSettingsPage();
+      }
     }
   }).catch(function(){setSyncStatus('err','Verbindungsfehler – lokale Daten');});
 }
@@ -742,7 +757,14 @@ function renderSettingsPage() {
   var bi=document.getElementById('bandNameInput'); if(bi) bi.value=bandName;
   var list=document.getElementById('songEditList'); if(!list) return;
   list.innerHTML='';
-  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden.</p>';return;}
+  // If songs empty, try reloading from localStorage
+  if(!songs.length){
+    try{
+      var s=localStorage.getItem('blameit_songs');
+      if(s) songs=JSON.parse(s);
+    }catch(e){}
+  }
+  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden – tippe auf Aktualisieren.</p>';return;}
   songs.forEach(function(s,idx){
     var row=document.createElement('div'); row.className='song-edit-row';
     var num=document.createElement('div'); num.className='song-edit-num'; num.textContent=idx+1;
@@ -780,7 +802,14 @@ function renderSettingsPage(){
   var bi=document.getElementById('bandNameInput');if(bi)bi.value=bandName;
   var list=document.getElementById('songEditList');if(!list)return;
   list.innerHTML='';
-  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden.</p>';return;}
+  // If songs empty, try reloading from localStorage
+  if(!songs.length){
+    try{
+      var s=localStorage.getItem('blameit_songs');
+      if(s) songs=JSON.parse(s);
+    }catch(e){}
+  }
+  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px">Keine Songs vorhanden – tippe auf Aktualisieren.</p>';return;}
   songs.forEach(function(s,idx){
     var row=document.createElement('div');row.className='song-edit-row';
     var num=document.createElement('div');num.className='song-edit-num';num.textContent=idx+1;
