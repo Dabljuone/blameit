@@ -529,7 +529,19 @@ function buildPayload() {
 
 function applyCloudData(rec) {
   if (!rec) return;
-  if (rec.songs && rec.songs.length) songs = rec.songs;
+  if (rec.songs && rec.songs.length) {
+    songs = rec.songs;
+    // Ensure bpm/dur from DEFAULT_SONGS if not in cloud data
+    songs.forEach(function(song) {
+      if (!song.bpm || !song.dur) {
+        var def = DEFAULT_SONGS.filter(function(d){ return d.n === song.n; })[0];
+        if (def) {
+          if (!song.bpm && def.bpm) song.bpm = def.bpm;
+          if (!song.dur && def.dur) song.dur = def.dur;
+        }
+      }
+    });
+  }
   if (rec.bandName) bandName = rec.bandName;
   if (rec.lyrics) Object.keys(rec.lyrics).forEach(function(k){ try{localStorage.setItem('blameit_lyrics_'+k,rec.lyrics[k]);}catch(e){} });
   if (rec.bpm)    Object.keys(rec.bpm).forEach(function(k){    try{localStorage.setItem('blameit_bpm_'+k,   rec.bpm[k]);}catch(e){} });
@@ -595,11 +607,26 @@ function loadData() {
   isAdmin = getAdminState();
   try {
     var s = localStorage.getItem('blameit_songs');
-    if (s) { songs = JSON.parse(s); }
-    else { songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; }); saveData(); }
+    if (s) {
+      songs = JSON.parse(s);
+      // Migration: add bpm/dur from DEFAULT_SONGS if missing
+      songs.forEach(function(song) {
+        if (!song.bpm || !song.dur) {
+          var def = DEFAULT_SONGS.filter(function(d){ return d.n === song.n; })[0];
+          if (def) {
+            if (!song.bpm && def.bpm) song.bpm = def.bpm;
+            if (!song.dur && def.dur) song.dur = def.dur;
+          }
+        }
+      });
+      saveData();
+    } else {
+      songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice(),bpm:x.bpm,dur:x.dur}; });
+      saveData();
+    }
     bandName = localStorage.getItem('blameit_bandname') || 'BlameIt';
   } catch(e) {
-    songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
+    songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice(),bpm:x.bpm,dur:x.dur}; });
   }
   setTimeout(syncFromCloud, 1000);
   // Auto-refresh every 30s for non-admins so they see changes immediately
