@@ -295,7 +295,7 @@
         "Sax",
         "Gesang"
       ],
-      "bpm": 108,
+      "bpm": 65,
       "dur": "3:50"
     },
     {
@@ -345,9 +345,11 @@
     "23": "xcuse me for a while\nWhile I'm wide-eyed\nAnd I'm so damn caught in the middle\nI excused you for a while\nWhile I'm wide-eyed\nAnd I'm so damn caught in the middle\nAnd a lion, a lion roars, would you not listen?\nIf a child, a child cries, would you not forgive them?\nYeah I might seem so strong\nYeah I might speak so long\nI've never been so wrong\nYeah I might seem so strong\nYeah I might speak so long\nI've never been so wrong\nExcuse me for a while\nTurn a blind eye\nWith a stare caught right in the middle\nHave you wondered for a while?\nI have a feeling deep down\nYou're caught in the middle\nIf a lion, a lion roars, would you not listen?\nIf a child, a child cries, would you not forgive them?\nYeah I might seem so strong\nYeah I might speak so long\nI've never been so wrong\nYeah I might seem so strong\nYeah I might speak so long\nI've never been so wrong\nExcuse me for a while\nWhile I'm wide-eyed\nAnd I'm so damn caught in the middle\nHave you wondered for a while?\nI have a feeling deep down\nYou're caught in the middle\nYeah I might seem so strong\nYeah I might speak so long\nI've never been so wrong\nYeah I might seem so strong\nYeah I might speak so long\nI've never been so wrong"
   },
   "bpm": {
+    "21": "65",
     "22": "89"
   },
   "fine": {
+    "21": "0.3",
     "22": "0.4"
   }
 }
