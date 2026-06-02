@@ -323,10 +323,11 @@ window.addEventListener("appinstalled",function(){
   <p class="subtitle" id="settingsSubtitle">Lade...</p>
 
   <!-- Sync Status Bar -->
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#e8f4fd;border-radius:8px;margin-bottom:12px;font-size:12px;color:#555">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#e8f4fd;border-radius:8px;margin-bottom:12px;font-size:12px;color:#555;flex-wrap:wrap">
     <div class="sync-dot" id="syncDot"></div>
     <span id="syncLabel">Verbinde mit Band-Server...</span>
-    <button class="btn" style="font-size:11px;padding:4px 10px;margin-left:auto" onclick="syncFromCloud()">&#8635; Aktualisieren</button>
+    <span style="color:#888;font-size:11px" id="autoSyncNote">&#8635; Auto-Sync alle 30 Sek.</span>
+    <button class="btn primary" style="font-size:11px;padding:4px 12px;margin-left:auto" onclick="syncFromCloud()">&#8635; Jetzt aktualisieren</button>
   </div>
 
   <!-- Admin Login -->
@@ -567,7 +568,7 @@ function pushToCloud() {
   .then(function(data) {
     if (data && data.content) {
       setSyncStatus('ok', 'Gespeichert – ' + new Date().toLocaleTimeString('de-DE'));
-      showToast('In Cloud gespeichert! Alle Geräte werden beim nächsten Öffnen aktualisiert.');
+      showToast('Gespeichert! Andere Geräte sehen Änderungen in ~30 Sekunden.');
     } else {
       setSyncStatus('err', 'Fehler: ' + JSON.stringify(data).substring(0,80));
     }
@@ -586,6 +587,10 @@ function loadData() {
     songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice()}; });
   }
   setTimeout(syncFromCloud, 1000);
+  // Auto-refresh every 30s for non-admins so they see changes immediately
+  setInterval(function(){
+    if (!isAdmin) syncFromCloud();
+  }, 30000);
 }
 function saveData() {
   try { localStorage.setItem('blameit_songs',JSON.stringify(songs)); localStorage.setItem('blameit_bandname',bandName); } catch(e){}
@@ -811,6 +816,13 @@ function showToast(msg){
 document.addEventListener('DOMContentLoaded',function(){
   var m=document.getElementById('songModal');
   if(m)m.addEventListener('click',function(e){if(e.target===this)closeModal();});
+});
+
+// Sync when app comes back into focus (e.g. switching tabs or unlocking phone)
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden && !isAdmin) {
+    syncFromCloud();
+  }
 });
 </script>
 
