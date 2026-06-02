@@ -691,7 +691,8 @@ function buildPickerCard(s) {
   var pc=document.createElement('div'); pc.className='picker-card'; pc.id='picker-'+s.n;
   var pn=document.createElement('div'); pn.className='p-num';    pn.textContent='#'+s.n;
   var pt=document.createElement('div'); pt.className='p-title';  pt.textContent=s.t;
-  var pa=document.createElement('div'); pa.className='p-artist'; pa.textContent=s.a;
+  var pa=document.createElement('div'); pa.className='p-artist';
+  pa.textContent = s.bpm ? (s.a + ' · ' + s.bpm + ' BPM') : s.a;
   var pdR=document.createElement('div'); pdR.className='p-dur-row';
   var pdL=document.createElement('span'); pdL.className='p-dur-label'; pdL.textContent='L\u00e4nge:';
   var pdI=document.createElement('input'); pdI.type='text'; pdI.className='p-dur-inp'; pdI.placeholder='0:00'; pdI.id='pdur-'+s.n;
