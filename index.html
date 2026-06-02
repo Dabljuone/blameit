@@ -174,7 +174,7 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .fs-exit{position:fixed;top:12px;right:12px;z-index:10000;background:rgba(0,0,0,.6);border:1px solid #666;color:#fff;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;display:none}
   .lyrics-editor.fullscreen .fs-exit{display:block}
   .teleprompter:active{cursor:grabbing}
-  .teleprompter-inner{padding:50vh 28px 60vh 28px;font-size:22px;line-height:1.8;color:#fff;font-family:Arial,sans-serif;white-space:pre-wrap;word-break:break-word}
+  .teleprompter-inner{padding:50vh 28px 60vh 28px;font-size:22px;line-height:1.8;color:#fff;font-family:Arial,sans-serif;white-space:pre-wrap;word-break:break-word;text-align:center}
   .teleprompter-fade{position:sticky;bottom:0;left:0;right:0;height:70px;background:linear-gradient(transparent,#111);pointer-events:none;margin-top:-70px}
   .teleprompter-fade-top{position:sticky;top:0;left:0;right:0;height:50px;background:linear-gradient(#111,transparent);pointer-events:none;margin-bottom:-50px;z-index:1}
   /* Edit mode */
@@ -946,6 +946,8 @@ document.addEventListener('DOMContentLoaded',function(){
           <button class="metro-btn" id="metroBtn" onclick="toggleMetronome()" title="Metronom">&#9654;</button>
         </div>
         <div style="display:flex;gap:4px;align-items:center">
+          <button class="fs-btn" id="fontMinus" onclick="changeFontSize(-2)" title="Kleiner">&#8722;</button>
+          <button class="fs-btn" id="fontPlus" onclick="changeFontSize(2)" title="Gr&#246;&#223;er">+</button>
           <button class="mode-btn active" id="btnEdit" onclick="setMode('edit')">Bearbeiten</button>
           <button class="mode-btn" id="btnTele" onclick="setMode('tele')">Teleprompter</button>
           <button class="fs-btn" id="fsBtn" onclick="toggleFullscreen()" title="Vollbild" style="display:none">&#9974;</button>
@@ -1035,6 +1037,7 @@ function openLyricsEditor(n){
 
 function setMode(mode){
   lyricsMode=mode; var isEdit=mode==='edit';
+  loadFontSize();
   document.getElementById('btnEdit').classList.toggle('active',isEdit);
   document.getElementById('btnTele').classList.toggle('active',!isEdit);
   document.getElementById('lyricsTextarea').style.display=isEdit?'block':'none';
@@ -1091,6 +1094,27 @@ function startScroll(){
 }
 function stopScroll(){scrollRunning=false;if(scrollTimer){cancelAnimationFrame(scrollTimer);scrollTimer=null;}var tele=document.getElementById('teleprompter');if(tele)scrollPos=tele.scrollTop;var btn=document.getElementById('telePlayBtn');if(btn)btn.innerHTML='&#9654; Start';}
 function updateBpmSpeedInfo(){var info=document.getElementById('bpmSpeedInfo');if(!info)return;var bpm=parseInt(document.getElementById('metroBpm').value)||120;var fine=parseFloat(document.getElementById('scrollSpeed').value)||1.0;var base=(bpm-40)/(300-40)*(2.5-0.2)+0.2;info.textContent=bpm+' BPM \u2192 '+(base*fine).toFixed(2)+' px/frame';}
+
+var teleFontSize = 22;
+
+function changeFontSize(delta) {
+  teleFontSize += delta;
+  if (teleFontSize < 12) teleFontSize = 12;
+  if (teleFontSize > 60) teleFontSize = 60;
+  var inner = document.getElementById('teleInner');
+  if (inner) inner.style.fontSize = teleFontSize + 'px';
+  var ta = document.getElementById('lyricsTextarea');
+  if (ta) ta.style.fontSize = teleFontSize + 'px';
+  try { localStorage.setItem('blameit_fontsize', teleFontSize); } catch(e){}
+}
+
+function loadFontSize() {
+  try { var f = parseInt(localStorage.getItem('blameit_fontsize')); if (f) teleFontSize = f; } catch(e){}
+  var inner = document.getElementById('teleInner');
+  if (inner) inner.style.fontSize = teleFontSize + 'px';
+  var ta = document.getElementById('lyricsTextarea');
+  if (ta) ta.style.fontSize = teleFontSize + 'px';
+}
 
 function toggleFullscreen() {
   var editor = document.getElementById('lyricsEditor');
