@@ -373,6 +373,16 @@ window.addEventListener("appinstalled",function(){
     <h3 id="modalTitle">Song bearbeiten</h3>
     <div class="form-group"><label>Titel</label><input type="text" class="field" id="modalSongTitle" placeholder="Songtitel"></div>
     <div class="form-group"><label>K&#252;nstler / Original</label><input type="text" class="field" id="modalSongArtist" placeholder="K&#252;nstler"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Songdauer (min:sek)</label>
+        <input type="text" class="field" id="modalSongDur" placeholder="z.B. 4:32">
+      </div>
+      <div class="form-group">
+        <label>BPM</label>
+        <input type="number" class="field" id="modalSongBpm" placeholder="z.B. 120" min="40" max="300">
+      </div>
+    </div>
     <div class="form-group">
       <label>Instrumente</label>
       <div class="instr-checks">
@@ -474,7 +484,11 @@ function buildSongEditList() {
     var num=document.createElement('div'); num.className='song-edit-num'; num.textContent=idx+1;
     var info=document.createElement('div'); info.className='song-edit-info';
     var t=document.createElement('div'); t.className='song-edit-title'; t.textContent=s.t;
-    var a=document.createElement('div'); a.className='song-edit-artist'; a.textContent=s.a;
+    var a=document.createElement('div'); a.className='song-edit-artist';
+    var meta=[s.a];
+    if(s.dur) meta.push(s.dur+' min');
+    if(s.bpm) meta.push(s.bpm+' BPM');
+    a.textContent=meta.join(' · ');
     info.appendChild(t); info.appendChild(a);
     var eb=document.createElement('button'); eb.className='edit-btn'; eb.textContent='Bearbeiten';
     var db=document.createElement('button'); db.className='edit-btn del'; db.textContent='Loeschen';
@@ -636,10 +650,18 @@ function buildPickerCard(s) {
   var pdL=document.createElement('span'); pdL.className='p-dur-label'; pdL.textContent='L\u00e4nge:';
   var pdI=document.createElement('input'); pdI.type='text'; pdI.className='p-dur-inp'; pdI.placeholder='0:00'; pdI.id='pdur-'+s.n;
   pdI.addEventListener('click',function(e){e.stopPropagation();});
+  // Pre-fill with stored song duration
+  if(!pdI.value && s.dur) pdI.value = s.dur;
   (function(sn,inp){
     inp.addEventListener('input',function(){var v=inp.value.trim();setlist.forEach(function(it){if(!it.pause&&it.n===sn){it.dur=v;}});updateTotal();syncSetlistDurInputs(sn,v);});
     inp.addEventListener('blur',function(){var raw=inp.value.trim();if(raw&&raw.indexOf(':')===-1&&raw.indexOf('.')===-1){var v=parseInt(raw);if(!isNaN(v)){inp.value=(v>99)?Math.floor(v/100)+':'+pad(v%100):v+':00';}}var v=inp.value.trim();setlist.forEach(function(it){if(!it.pause&&it.n===sn){it.dur=v;}});updateTotal();syncSetlistDurInputs(sn,v);});
-    pc.addEventListener('click',function(){if(pc.classList.contains('in-set'))return;addToSetlist(sn,inp.value.trim());});
+    pc.addEventListener('click',function(){
+      if(pc.classList.contains('in-set'))return;
+      // Use picker input value, or fall back to song's stored duration
+      var durVal=inp.value.trim();
+      if(!durVal){var songObj=songs.filter(function(x){return x.n===sn;})[0];if(songObj&&songObj.dur)durVal=songObj.dur;}
+      addToSetlist(sn,durVal);
+    });
   })(s.n,pdI);
   pdR.appendChild(pdL);pdR.appendChild(pdI);
   pc.appendChild(pn);pc.appendChild(pt);pc.appendChild(pa);pc.appendChild(pdR);
@@ -781,6 +803,8 @@ function openEditSong(idx){
   document.getElementById('modalTitle').textContent='Song bearbeiten';
   document.getElementById('modalSongTitle').value=s.t;
   document.getElementById('modalSongArtist').value=s.a;
+  document.getElementById('modalSongDur').value=s.dur||'';
+  document.getElementById('modalSongBpm').value=s.bpm||'';
   ['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){document.getElementById('chk'+i).checked=(s.instr&&s.instr.indexOf(i)!==-1);});
   document.getElementById('songModal').classList.add('open');
 }
@@ -789,6 +813,8 @@ function openAddSong(){
   document.getElementById('modalTitle').textContent='Neuer Song';
   document.getElementById('modalSongTitle').value='';
   document.getElementById('modalSongArtist').value='';
+  document.getElementById('modalSongDur').value='';
+  document.getElementById('modalSongBpm').value='';
   ['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){document.getElementById('chk'+i).checked=false;});
   document.getElementById('songModal').classList.add('open');
 }
@@ -796,10 +822,17 @@ function closeModal(){document.getElementById('songModal').classList.remove('ope
 function saveModalSong(){
   var t=document.getElementById('modalSongTitle').value.trim();
   var a=document.getElementById('modalSongArtist').value.trim();
+  var dur=document.getElementById('modalSongDur').value.trim();
+  var bpm=parseInt(document.getElementById('modalSongBpm').value)||0;
   if(!t){alert('Bitte einen Titel eingeben.');return;}
   var instr=[];['Drums','Bass','Key','Git','Sax','Gesang'].forEach(function(i){if(document.getElementById('chk'+i).checked)instr.push(i);});
-  if(editingSongIdx!==null){songs[editingSongIdx].t=t;songs[editingSongIdx].a=a;songs[editingSongIdx].instr=instr;}
-  else{var maxN=songs.reduce(function(m,s){return Math.max(m,s.n);},0);songs.push({n:maxN+1,t:t,a:a,instr:instr});}
+  if(editingSongIdx!==null){
+    songs[editingSongIdx].t=t;songs[editingSongIdx].a=a;songs[editingSongIdx].instr=instr;
+    songs[editingSongIdx].dur=dur;songs[editingSongIdx].bpm=bpm||undefined;
+  } else {
+    var maxN=songs.reduce(function(m,s){return Math.max(m,s.n);},0);
+    songs.push({n:maxN+1,t:t,a:a,instr:instr,dur:dur,bpm:bpm||undefined});
+  }
   saveData();pushToCloud();closeModal();if(isAdmin)buildSongEditList();rebuildGrids();
   showToast(editingSongIdx!==null?'Song gespeichert!':'Song hinzugef\u00fcgt!');
 }
@@ -922,7 +955,10 @@ function openLyricsEditor(n){
   document.getElementById('lyricsEditorTitle').textContent=s.t;
   document.getElementById('lyricsEditorSub').textContent=s.a;
   document.getElementById('lyricsEditorEmpty').style.display='none';
-  document.getElementById('metroBpm').value=getLyricsBpm(n);
+  // Use song's stored BPM if available, otherwise use saved lyrics BPM
+  var songObj=songs.filter(function(x){return x.n===n;})[0];
+  var bpmVal=(songObj&&songObj.bpm)?songObj.bpm:getLyricsBpm(n);
+  document.getElementById('metroBpm').value=bpmVal;
   var fine=getLyricsFine(n);
   var sp=document.getElementById('scrollSpeed'); if(sp){sp.value=fine;document.getElementById('speedVal').textContent='x'+fine.toFixed(1);}
   setMode(lyricsMode);
