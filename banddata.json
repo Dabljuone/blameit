@@ -283,7 +283,13 @@
     }
   ],
   "bandName": "Blame It On Frank",
-  "lyrics": {},
-  "bpm": {},
-  "fine": {}
+  "lyrics": {
+    "22": "I can′t remember when I last felt this way\nI can't remember when the clouds and the rain couldn′t dull my day\nI can't remember having a feeling so fine\nI can't remember when you weren′t the one that was on my mind\nMaybe your smile\nOr maybe your style\nMakes me wanna\nWith you\nI can′t remember when I last felt this way\nI can't remember when the clouds and the rain couldn′t dull my day\nI can't remember having a feeling so fine\nI can′t remember when you weren't the one that was on my mind\nYou don′t have to try\nIt's all in your eyes\nMakes me wanna\nWith you\nI can't remember when I last felt this way\nI can′t remember when the clouds and the rain couldn′t dull my day\nI can't remember having a feeling so fine\nI can′t remember when you weren't the one that was on my mind\nMaybe your smile\nOr maybe your style\nMakes me wanna\nWith you"
+  },
+  "bpm": {
+    "22": "89"
+  },
+  "fine": {
+    "22": "0.4"
+  }
 }
