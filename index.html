@@ -551,6 +551,7 @@ function syncFromCloud() {
       applyCloudData(data);
       setSyncStatus('ok', 'Synchronisiert – ' + new Date().toLocaleTimeString('de-DE'));
       if (document.getElementById('pageSettings').classList.contains('active')) renderSettingsPage();
+      if (document.getElementById('pageLyrics').classList.contains('active')) renderLyricsPage();
       showToast('Daten aktualisiert!');
     })
     .catch(function() { setSyncStatus('err', 'Verbindungsfehler'); });
