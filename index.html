@@ -754,7 +754,14 @@ function renderSetlist(){
     var tdPos=document.createElement('td');tdPos.className='pos';tdPos.textContent=isPause?'\u2014':songPos;if(isPause)tdPos.style.color='#c8960a';
     var tdInfo=document.createElement('td');tdInfo.className='song-info';
     var divT=document.createElement('div');divT.className='s-title';divT.textContent=isPause?'\u2615 Pause':(s?s.t:'?');tdInfo.appendChild(divT);
-    if(!isPause&&s){var divA=document.createElement('div');divA.className='s-artist';divA.textContent=s.a;tdInfo.appendChild(divA);}
+    if(!isPause&&s){
+      var divA=document.createElement('div');divA.className='s-artist';
+      var meta=[s.a];
+      if(s.bpm) meta.push(s.bpm+' BPM');
+      if(s.dur)  meta.push(s.dur);
+      divA.textContent=meta.join(' · ');
+      tdInfo.appendChild(divA);
+    }
     var tdDur=document.createElement('td');tdDur.className='duration';
     var inp=document.createElement('input');inp.type='text';inp.className='dur-input';inp.placeholder=isPause?'Pause':'0:00';inp.value=item.dur;
     (function(i,input){
