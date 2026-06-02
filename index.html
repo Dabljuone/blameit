@@ -296,7 +296,8 @@ window.addEventListener("appinstalled",function(){
       <th style="width:26px"></th>
       <th class="center" style="width:32px">#</th>
       <th>Song</th>
-      <th class="center">Dauer (min:sek)</th>
+      <th class="center" style="width:90px">L&auml;nge</th>
+      <th class="center" style="width:75px">BPM</th>
       <th style="width:32px"></th>
     </tr></thead>
     <tbody id="setlistBody">
@@ -605,23 +606,40 @@ function pushToCloud() {
 
 function loadData() {
   isAdmin = getAdminState();
+  var DATA_VERSION = '2'; // bump this to force migration
   try {
     var s = localStorage.getItem('blameit_songs');
-    if (s) {
+    var v = localStorage.getItem('blameit_version');
+    if (s && v === DATA_VERSION) {
       songs = JSON.parse(s);
-      // Migration: add bpm/dur from DEFAULT_SONGS if missing
-      songs.forEach(function(song) {
-        if (!song.bpm || !song.dur) {
-          var def = DEFAULT_SONGS.filter(function(d){ return d.n === song.n; })[0];
-          if (def) {
-            if (!song.bpm && def.bpm) song.bpm = def.bpm;
-            if (!song.dur && def.dur) song.dur = def.dur;
-          }
-        }
-      });
-      saveData();
     } else {
-      songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice(),bpm:x.bpm,dur:x.dur}; });
+      // Version mismatch or first run: rebuild from DEFAULT_SONGS
+      // Keep custom title/artist/instr changes if they exist
+      if (s) {
+        var old = JSON.parse(s);
+        songs = DEFAULT_SONGS.map(function(def) {
+          var existing = old.filter(function(o){ return o.n === def.n; })[0];
+          if (existing) {
+            return {
+              n: def.n,
+              t: existing.t || def.t,
+              a: existing.a || def.a,
+              instr: existing.instr || def.instr.slice(),
+              bpm: existing.bpm || def.bpm,
+              dur: existing.dur || def.dur
+            };
+          }
+          return {n:def.n,t:def.t,a:def.a,instr:def.instr.slice(),bpm:def.bpm,dur:def.dur};
+        });
+        // Add any custom songs that aren't in DEFAULT_SONGS
+        old.forEach(function(o){
+          var inDefault = DEFAULT_SONGS.filter(function(d){return d.n===o.n;}).length > 0;
+          if (!inDefault) songs.push(o);
+        });
+      } else {
+        songs = DEFAULT_SONGS.map(function(x){ return {n:x.n,t:x.t,a:x.a,instr:x.instr.slice(),bpm:x.bpm,dur:x.dur}; });
+      }
+      localStorage.setItem('blameit_version', DATA_VERSION);
       saveData();
     }
     bandName = localStorage.getItem('blameit_bandname') || 'BlameIt';
@@ -783,10 +801,7 @@ function renderSetlist(){
     var divT=document.createElement('div');divT.className='s-title';divT.textContent=isPause?'\u2615 Pause':(s?s.t:'?');tdInfo.appendChild(divT);
     if(!isPause&&s){
       var divA=document.createElement('div');divA.className='s-artist';
-      var meta=[s.a];
-      if(s.bpm) meta.push(s.bpm+' BPM');
-      if(s.dur)  meta.push(s.dur);
-      divA.textContent=meta.join(' · ');
+      divA.textContent=s.a;
       tdInfo.appendChild(divA);
     }
     var tdDur=document.createElement('td');tdDur.className='duration';
@@ -796,10 +811,28 @@ function renderSetlist(){
       input.addEventListener('blur',function(){var raw=input.value.trim();if(raw&&raw.indexOf(':')===-1&&raw.indexOf('.')===-1){var v=parseInt(raw);if(!isNaN(v)){input.value=(v>99)?Math.floor(v/100)+':'+pad(v%100):v+':00';}}setlist[i].dur=input.value;updateTotal();if(!isPause&&item.n){var pi=document.getElementById('pdur-'+item.n);if(pi)pi.value=input.value;}});
     })(idx,inp);
     tdDur.appendChild(inp);
-    var tdRm=document.createElement('td');tdRm.className='remove';var rmBtn=document.createElement('button');rmBtn.className='remove-btn';rmBtn.textContent='\u2715';
+    // BPM input cell
+    var tdBpm=document.createElement('td');tdBpm.style.cssText='width:75px;text-align:center;vertical-align:middle';
+    if(!isPause){
+      var bpmInp=document.createElement('input');
+      bpmInp.type='number';bpmInp.className='dur-input';
+      bpmInp.style.width='62px';bpmInp.placeholder='BPM';
+      bpmInp.min='40';bpmInp.max='300';
+      bpmInp.value=s&&s.bpm?s.bpm:'';
+      (function(i,inp,songRef){
+        inp.addEventListener('input',function(){if(songRef)songRef.bpm=parseInt(inp.value)||0;});
+        inp.addEventListener('click',function(e){e.stopPropagation();});
+      })(idx,bpmInp,s);
+      tdBpm.appendChild(bpmInp);
+    } else {
+      tdBpm.textContent='-';tdBpm.style.color='#ccc';
+    }
+    // Delete button
+    var tdRm=document.createElement('td');tdRm.className='remove';
+    var rmBtn=document.createElement('button');rmBtn.className='remove-btn';rmBtn.textContent='✕';
     (function(i){rmBtn.addEventListener('click',function(){removeFromSetlist(i);});})(idx);
     tdRm.appendChild(rmBtn);
-    tr.appendChild(tdDrag);tr.appendChild(tdPos);tr.appendChild(tdInfo);tr.appendChild(tdDur);tr.appendChild(tdRm);tbody.appendChild(tr);
+    tr.appendChild(tdDrag);tr.appendChild(tdPos);tr.appendChild(tdInfo);tr.appendChild(tdDur);tr.appendChild(tdBpm);tr.appendChild(tdRm);tbody.appendChild(tr);
     if(!isPause)totalSecs+=parseDur(item.dur);
   });
   var sc=setlist.filter(function(i){return!i.pause;}).length;
