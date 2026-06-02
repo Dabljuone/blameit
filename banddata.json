@@ -280,6 +280,14 @@
         "Git",
         "Gesang"
       ]
+    },
+    {
+      "n": 24,
+      "t": ">Test",
+      "a": "",
+      "instr": [
+        "Bass"
+      ]
     }
   ],
   "bandName": "Blame It On Frank",
