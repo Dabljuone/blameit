@@ -203,6 +203,29 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .sync-dot.err{background:#f44336}
   .sync-dot.loading{background:#f0a800;animation:syncpulse 0.8s infinite}
   @keyframes syncpulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+  /* UEBERSICHT / HOME */
+  .home-hero{text-align:center;padding:10px 0 18px}
+  .home-hero h1{font-size:26px;font-weight:700;margin-bottom:4px}
+  .home-hero p{font-size:13px;color:#888}
+  .event-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:0;margin-bottom:14px;overflow:hidden;display:flex;border-left:5px solid #378ADD}
+  .event-card.past{opacity:.5;border-left-color:#bbb}
+  .event-date-box{background:#378ADD;color:#fff;padding:14px 16px;text-align:center;min-width:74px;display:flex;flex-direction:column;justify-content:center}
+  .event-card.past .event-date-box{background:#bbb}
+  .event-day{font-size:26px;font-weight:700;line-height:1}
+  .event-month{font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+  .event-year{font-size:10px;opacity:.8;margin-top:1px}
+  .event-body{padding:12px 16px;flex:1;min-width:0}
+  .event-title{font-size:15px;font-weight:600;color:#1a1a2e;margin-bottom:4px}
+  .event-detail{font-size:12px;color:#666;display:flex;align-items:center;gap:5px;margin-top:3px}
+  .event-countdown{display:inline-block;background:#e8f4fd;color:#378ADD;font-size:11px;font-weight:600;border-radius:10px;padding:2px 8px;margin-top:6px}
+  .event-countdown.soon{background:#fff3cd;color:#856404}
+  .event-countdown.today{background:#d4edda;color:#155724}
+  .event-del-btn{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;padding:8px;align-self:flex-start}
+  .event-del-btn:hover{color:#e53935}
+  .home-empty{text-align:center;padding:3rem 1rem;color:#aaa}
+  .home-empty-icon{font-size:48px;margin-bottom:12px}
+  .home-add-hint{background:#e8f4fd;border-radius:8px;padding:10px 14px;font-size:13px;color:#555;margin-top:8px;text-align:center}
 </style>
 </head>
 <body>
@@ -237,14 +260,27 @@ window.addEventListener("appinstalled",function(){
 </script>
 
 <div class="nav">
-  <button class="nav-btn active" id="navTermin" onclick="showPage('termin')">&#128197; Termin</button>
+  <button class="nav-btn active" id="navHome" onclick="showPage('home')">&#127968; &#220;bersicht</button>
+  <button class="nav-btn" id="navTermin" onclick="showPage('termin')">&#128197; Termin</button>
   <button class="nav-btn" id="navSetlist" onclick="showPage('setlist')">&#127926; Setliste</button>
   <button class="nav-btn" id="navSettings" onclick="showPage('settings')">&#9881; Einstellungen</button>
   <button class="nav-btn" id="navLyrics" onclick="showPage('lyrics')">&#127908; Songtexte</button>
 </div>
 
+<!-- SEITE 0: UEBERSICHT -->
+<div class="page active" id="pageHome">
+  <div class="home-hero">
+    <h1 id="homeBandName">BlameIt</h1>
+    <p>Kommende Proben &amp; Auftritte</p>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button class="btn" style="font-size:12px;padding:5px 12px" onclick="syncFromCloud()">&#8635; Aktualisieren</button>
+  </div>
+  <div id="eventList"></div>
+</div>
+
 <!-- SEITE 1: TERMINPLANER -->
-<div class="page active" id="pageTermin">
+<div class="page" id="pageTermin">
   <h1 id="pageTitle">BlameIt &#8211; Terminplaner</h1>
   <p class="subtitle">Songs ausw&#228;hlen, Termin eintragen und als Kalender-Ereignis teilen.</p>
   <p class="section-label">Farblegende</p>
@@ -275,6 +311,13 @@ window.addEventListener("appinstalled",function(){
   <div class="selected-list" id="selectedList">Noch keine Songs ausgew&#228;hlt.</div>
   <div class="btn-row"><button class="btn reset" onclick="clearSelection()">&#10005; Auswahl zur&#252;cksetzen</button></div>
   <hr>
+  <div id="saveEventCard" style="display:none">
+    <p class="section-label">Termin in Band-&#220;bersicht speichern</p>
+    <div class="btn-row">
+      <button class="btn primary" onclick="saveEventToCloud()">&#128190; Termin f&#252;r alle speichern</button>
+    </div>
+    <hr>
+  </div>
   <p class="section-label">Kalendereintrag exportieren</p>
   <div class="btn-row">
     <button class="btn primary" onclick="downloadICS()">&#11015; .ics herunterladen</button>
@@ -454,6 +497,8 @@ var GITHUB_FILE  = 'banddata.json';
 var ADMIN_PW = 'BlameIt2024';
 var isAdmin = false;
 var githubFileSha = null; // needed for updates
+var bandEvents = [];
+try { bandEvents = JSON.parse(localStorage.getItem('blameit_events')||'[]'); } catch(e){ bandEvents = []; }
 
 function getAdminState(){ try{return localStorage.getItem('blameit_admin')==='1';}catch(e){return false;} }
 function setAdminState(v){ try{localStorage.setItem('blameit_admin',v?'1':'0');}catch(e){} }
@@ -533,7 +578,7 @@ function buildPayload() {
       var f=localStorage.getItem('blameit_fine_'+s.n);   if(f) fine[s.n]=f;
     } catch(e){}
   });
-  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine };
+  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine, events:bandEvents };
 }
 
 function applyCloudData(rec) {
@@ -555,7 +600,9 @@ function applyCloudData(rec) {
   if (rec.lyrics) Object.keys(rec.lyrics).forEach(function(k){ try{localStorage.setItem('blameit_lyrics_'+k,rec.lyrics[k]);}catch(e){} });
   if (rec.bpm)    Object.keys(rec.bpm).forEach(function(k){    try{localStorage.setItem('blameit_bpm_'+k,   rec.bpm[k]);}catch(e){} });
   if (rec.fine)   Object.keys(rec.fine).forEach(function(k){   try{localStorage.setItem('blameit_fine_'+k,  rec.fine[k]);}catch(e){} });
+  if (rec.events) { bandEvents = rec.events; try{localStorage.setItem('blameit_events',JSON.stringify(bandEvents));}catch(e){} }
   saveData(); updatePageTitle(); rebuildGrids();
+  if (document.getElementById('pageHome') && document.getElementById('pageHome').classList.contains('active')) renderHomePage();
 }
 
 function syncFromCloud() {
@@ -660,14 +707,140 @@ function saveData() {
   try { localStorage.setItem('blameit_songs',JSON.stringify(songs)); localStorage.setItem('blameit_bandname',bandName); } catch(e){}
 }
 
+// ── UEBERSICHT / HOME ──
+var MONTHS_DE = ['Jan','Feb','M\u00e4r','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+function renderHomePage() {
+  var hb = document.getElementById('homeBandName');
+  if (hb) hb.textContent = bandName;
+  // Show save button on termin page if admin
+  var sec = document.getElementById('saveEventCard');
+  if (sec) sec.style.display = isAdmin ? 'block' : 'none';
+
+  var list = document.getElementById('eventList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  // Sort events by date
+  var now = new Date(); now.setHours(0,0,0,0);
+  var sorted = bandEvents.slice().sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); });
+
+  if (!sorted.length) {
+    list.innerHTML = '<div class="home-empty"><div class="home-empty-icon">&#127925;</div>' +
+      '<p>Noch keine Termine eingetragen.</p>' +
+      (isAdmin ? '<div class="home-add-hint">Gehe zu &#128197; Termin, w\u00e4hle Songs + Datum und tippe auf \u201eTermin f\u00fcr alle speichern\u201c.</div>'
+               : '<div class="home-add-hint">Der Admin kann Termine eintragen.</div>') +
+      '</div>';
+    return;
+  }
+
+  sorted.forEach(function(ev) {
+    var evDate = new Date(ev.date + 'T' + (ev.time||'00:00'));
+    var evDay = new Date(ev.date); evDay.setHours(0,0,0,0);
+    var isPast = evDay < now;
+    var dp = ev.date.split('-');
+
+    var card = document.createElement('div');
+    card.className = 'event-card' + (isPast ? ' past' : '');
+
+    // Date box
+    var dateBox = document.createElement('div');
+    dateBox.className = 'event-date-box';
+    dateBox.innerHTML = '<div class="event-day">' + parseInt(dp[2]) + '</div>' +
+      '<div class="event-month">' + MONTHS_DE[parseInt(dp[1])-1] + '</div>' +
+      '<div class="event-year">' + dp[0] + '</div>';
+
+    // Body
+    var body = document.createElement('div');
+    body.className = 'event-body';
+    var title = document.createElement('div');
+    title.className = 'event-title';
+    title.textContent = ev.title || (bandName + ' \u2013 Termin');
+    body.appendChild(title);
+
+    if (ev.time) {
+      var tEl = document.createElement('div'); tEl.className='event-detail';
+      tEl.innerHTML = '&#128336; ' + ev.time + ' Uhr' + (ev.dur ? ' (' + ev.dur + ' Min)' : '');
+      body.appendChild(tEl);
+    }
+    if (ev.loc) {
+      var lEl = document.createElement('div'); lEl.className='event-detail';
+      lEl.innerHTML = '&#128205; ' + ev.loc;
+      body.appendChild(lEl);
+    }
+    if (ev.songs && ev.songs.length) {
+      var sEl = document.createElement('div'); sEl.className='event-detail';
+      sEl.innerHTML = '&#127925; ' + ev.songs.length + ' Songs';
+      body.appendChild(sEl);
+    }
+    if (ev.note) {
+      var nEl = document.createElement('div'); nEl.className='event-detail';
+      nEl.textContent = ev.note;
+      body.appendChild(nEl);
+    }
+
+    // Countdown
+    if (!isPast) {
+      var days = Math.ceil((evDay - now) / (1000*60*60*24));
+      var cd = document.createElement('span');
+      cd.className = 'event-countdown' + (days===0?' today':days<=3?' soon':'');
+      cd.textContent = days===0 ? 'Heute!' : days===1 ? 'Morgen' : 'in ' + days + ' Tagen';
+      body.appendChild(cd);
+    }
+
+    card.appendChild(dateBox);
+    card.appendChild(body);
+
+    // Delete button (admin only)
+    if (isAdmin) {
+      var del = document.createElement('button');
+      del.className = 'event-del-btn'; del.innerHTML = '&#10005;';
+      (function(id){ del.addEventListener('click', function(){ deleteEvent(id); }); })(ev.id);
+      card.appendChild(del);
+    }
+
+    list.appendChild(card);
+  });
+}
+
+function saveEventToCloud() {
+  var f = getFields();
+  if (!f.date) { alert('Bitte zuerst ein Datum ausw\u00e4hlen.'); return; }
+  var ev = {
+    id: 'ev_' + Date.now(),
+    date: f.date,
+    time: f.time,
+    dur: f.dur,
+    loc: f.loc,
+    note: f.note,
+    title: bandName + ' \u2013 ' + (f.loc || 'Termin'),
+    songs: selected.slice()
+  };
+  bandEvents.push(ev);
+  try { localStorage.setItem('blameit_events', JSON.stringify(bandEvents)); } catch(e){}
+  pushToCloud();
+  showToast('Termin gespeichert!');
+  showPage('home');
+}
+
+function deleteEvent(id) {
+  if (!confirm('Diesen Termin wirklich l\u00f6schen?')) return;
+  bandEvents = bandEvents.filter(function(e){ return e.id !== id; });
+  try { localStorage.setItem('blameit_events', JSON.stringify(bandEvents)); } catch(e){}
+  pushToCloud();
+  renderHomePage();
+  showToast('Termin gel\u00f6scht.');
+}
+
 // ── NAVIGATION ──
 function showPage(page) {
-  ['Termin','Setlist','Settings','Lyrics'].forEach(function(p) {
+  ['Home','Termin','Setlist','Settings','Lyrics'].forEach(function(p) {
     var pg=document.getElementById('page'+p); if(pg) pg.classList.toggle('active',p.toLowerCase()===page);
     var nv=document.getElementById('nav'+p);  if(nv) nv.classList.toggle('active',p.toLowerCase()===page);
   });
   if (page==='settings') renderSettingsPage();
   if (page==='lyrics') renderLyricsPage();
+  if (page==='home') renderHomePage();
 }
 
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -731,6 +904,7 @@ function init() {
   loadData();
   updatePageTitle();
   rebuildGrids();
+  renderHomePage();
   var today=new Date();
   document.getElementById('evtDate').value=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
 }
