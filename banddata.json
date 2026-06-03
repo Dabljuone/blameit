@@ -404,10 +404,12 @@
     }
   ],
   "leads": {
-    "1": "\n\nIntro 8 Takte\nStrophe 1"
+    "1": "\n\nIntro 8 Takte\nStrophe 1",
+    "2": "Intro (frei) Gitarre "
   },
   "lyricsdate": {},
   "leaddate": {
-    "1": "3.6.2026"
+    "1": "3.6.2026",
+    "2": "3.6.2026"
   }
 }
