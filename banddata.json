@@ -351,8 +351,21 @@
     "22": "89"
   },
   "fine": {
+    "1": "0.7",
     "18": "0.4",
     "21": "1.1",
     "22": "0.4"
-  }
+  },
+  "events": [
+    {
+      "id": "ev_1780471014723",
+      "date": "2026-07-18",
+      "time": "19:00",
+      "dur": 90,
+      "loc": "Irrel Weinhaus",
+      "note": "Konzert",
+      "title": "Blame It On Frank – Irrel Weinhaus",
+      "songs": []
+    }
+  ]
 }
