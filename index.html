@@ -630,9 +630,13 @@ function buildPayload() {
       var f=localStorage.getItem('blameit_fine_'+s.n);   if(f) fine[s.n]=f;
     } catch(e){}
   });
-  var leads={};
-  songs.forEach(function(s){ try{ var ld=localStorage.getItem('blameit_lead_'+s.n); if(ld) leads[s.n]=ld; }catch(e){} });
-  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine, events:bandEvents, leads:leads };
+  var leads={}, lyricsdate={}, leaddate={};
+  songs.forEach(function(s){ try{
+    var ld=localStorage.getItem('blameit_lead_'+s.n); if(ld) leads[s.n]=ld;
+    var lyd=localStorage.getItem('blameit_lyricsdate_'+s.n); if(lyd) lyricsdate[s.n]=lyd;
+    var led=localStorage.getItem('blameit_leaddate_'+s.n); if(led) leaddate[s.n]=led;
+  }catch(e){} });
+  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine, events:bandEvents, leads:leads, lyricsdate:lyricsdate, leaddate:leaddate };
 }
 
 function applyCloudData(rec) {
@@ -656,6 +660,8 @@ function applyCloudData(rec) {
   if (rec.fine)   Object.keys(rec.fine).forEach(function(k){   try{localStorage.setItem('blameit_fine_'+k,  rec.fine[k]);}catch(e){} });
   if (rec.events) { bandEvents = rec.events; try{localStorage.setItem('blameit_events',JSON.stringify(bandEvents));}catch(e){} }
   if (rec.leads) Object.keys(rec.leads).forEach(function(k){ try{localStorage.setItem('blameit_lead_'+k,rec.leads[k]);}catch(e){} });
+  if (rec.lyricsdate) Object.keys(rec.lyricsdate).forEach(function(k){ try{localStorage.setItem('blameit_lyricsdate_'+k,rec.lyricsdate[k]);}catch(e){} });
+  if (rec.leaddate) Object.keys(rec.leaddate).forEach(function(k){ try{localStorage.setItem('blameit_leaddate_'+k,rec.leaddate[k]);}catch(e){} });
   saveData(); updatePageTitle(); rebuildGrids();
   if (document.getElementById('pageHome') && document.getElementById('pageHome').classList.contains('active')) renderHomePage();
 }
@@ -1245,6 +1251,8 @@ function renderLyricsPage() {
     var title=document.createElement('div');title.className='lsi-title';title.textContent=s.t;
     var artist=document.createElement('div');artist.className='lsi-artist';artist.textContent=s.a;
     item.appendChild(num);item.appendChild(title);item.appendChild(artist);
+    var ld=''; try{ld=localStorage.getItem('blameit_lyricsdate_'+s.n)||'';}catch(e){}
+    if(ld && getLyrics(s.n)){var dEl=document.createElement('div');dEl.style.cssText='font-size:10px;color:#4CAF50;margin-top:2px';dEl.textContent='\u2713 '+ld;item.appendChild(dEl);}
     (function(sn){item.addEventListener('click',function(){openLyricsEditor(sn);});})(s.n);
     list.appendChild(item);
   });
@@ -1311,9 +1319,9 @@ function saveLyrics(){
   if(currentLyricsSongN===null)return;
   var text=document.getElementById('lyricsTextarea').value;
   saveLyricsData(currentLyricsSongN,text);
-  var item=document.getElementById('lsi-'+currentLyricsSongN);
-  if(item){if(text.trim())item.classList.add('has-text');else item.classList.remove('has-text');}
+  if(text.trim()){ try{localStorage.setItem('blameit_lyricsdate_'+currentLyricsSongN, new Date().toLocaleDateString('de-DE'));}catch(e){} }
   pushToCloud(); showToast('Songtext gespeichert!');
+  renderLyricsPage();
 }
 function clearLyrics(){
   if(currentLyricsSongN===null)return;
@@ -1450,6 +1458,8 @@ function renderLeadPage() {
     var title=document.createElement('div');title.className='lsi-title';title.textContent=s.t;
     var artist=document.createElement('div');artist.className='lsi-artist';artist.textContent=s.a;
     item.appendChild(num);item.appendChild(title);item.appendChild(artist);
+    var ld=''; try{ld=localStorage.getItem('blameit_leaddate_'+s.n)||'';}catch(e){}
+    if(ld && getLead(s.n)){var dEl=document.createElement('div');dEl.style.cssText='font-size:10px;color:#4CAF50;margin-top:2px';dEl.textContent='\u2713 '+ld;item.appendChild(dEl);}
     (function(sn){item.addEventListener('click',function(){openLeadEditor(sn);});})(s.n);
     list.appendChild(item);
   });
@@ -1498,9 +1508,9 @@ function saveLead(){
   if(currentLeadSongN===null)return;
   var text=document.getElementById('leadTextarea').value;
   saveLeadData(currentLeadSongN,text);
-  var item=document.getElementById('lead-lsi-'+currentLeadSongN);
-  if(item){if(text.trim())item.classList.add('has-text');else item.classList.remove('has-text');}
+  if(text.trim()){ try{localStorage.setItem('blameit_leaddate_'+currentLeadSongN, new Date().toLocaleDateString('de-DE'));}catch(e){} }
   pushToCloud(); showToast('Leadsheet gespeichert!');
+  renderLeadPage();
 }
 function clearLead(){
   if(currentLeadSongN===null)return;
