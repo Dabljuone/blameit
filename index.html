@@ -187,7 +187,7 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .metro-beat{width:12px;height:12px;border-radius:50%;background:#444;flex-shrink:0;transition:background .05s}
   .metro-beat.on{background:#fff;box-shadow:0 0 8px #fff}
   /* Teleprompter */
-  .teleprompter{flex:1;overflow-y:scroll;overflow-x:hidden;position:relative;cursor:grab;scroll-behavior:auto}
+  .teleprompter{flex:1;min-height:0;overflow-y:scroll;overflow-x:hidden;position:relative;cursor:grab;scroll-behavior:auto}
   .lyrics-editor.fullscreen{position:fixed;inset:0;z-index:9999;width:100vw;height:100vh;background:#111}
   .lyrics-editor.fullscreen .teleprompter{height:100vh}
   .lyrics-editor.fullscreen .lyrics-textarea{height:calc(100vh - 110px)}
@@ -201,9 +201,9 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .teleprompter-fade{position:sticky;bottom:0;left:0;right:0;height:70px;background:linear-gradient(transparent,#111);pointer-events:none;margin-top:-70px}
   .teleprompter-fade-top{position:sticky;top:0;left:0;right:0;height:50px;background:linear-gradient(#111,transparent);pointer-events:none;margin-bottom:-50px;z-index:1}
   /* Edit mode */
-  .lyrics-textarea{flex:1;width:100%;border:none;padding:clamp(10px,2vw,20px);font-size:clamp(13px,1.8vw,16px);font-family:'Courier New',monospace;line-height:1.7;resize:none;background:#1a1a1a;color:#ddd;outline:none}
+  .lyrics-textarea{flex:1;min-height:0;width:100%;border:none;padding:clamp(10px,2vw,20px);font-size:clamp(13px,1.8vw,16px);font-family:'Courier New',monospace;line-height:1.7;resize:none;background:#1a1a1a;color:#ddd;outline:none}
   .lyrics-textarea:focus{background:#1e1e1e}
-  .lyrics-editor-footer{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid #2a2a2a;background:#1a1a2e;flex-shrink:0}
+  .lyrics-editor-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 14px;border-top:1px solid #2a2a2a;background:#1a1a2e;flex-shrink:0;flex-wrap:wrap}
   .lyrics-char-count{font-size:11px;color:#aaa;flex:1}
   .mode-btn{background:none;border:1px solid #555;color:#aaa;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:Arial,sans-serif}
   .mode-btn.active{background:#378ADD;border-color:#378ADD;color:#fff}
@@ -1198,7 +1198,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <div class="lyrics-editor-empty" id="lyricsEditorEmpty">&#8592; Song ausw&#228;hlen</div>
       <textarea class="lyrics-textarea" id="lyricsTextarea" placeholder="Songtext hier eingeben..." style="display:none"></textarea>
       <div class="lyrics-editor-footer" id="lyricsEditorFooter" style="display:none">
-        <span class="lyrics-char-count" id="lyricsCharCount">0 Zeichen</span>
+        <span class="lyrics-char-count" id="lyricsCharCount" style="display:none"></span>
         <button class="btn primary" id="lyricsSaveBtn" onclick="saveLyrics()">&#10003; Speichern</button>
         <button class="btn reset" id="lyricsClearBtn" onclick="clearLyrics()">Text l&#246;schen</button>
       </div>
@@ -1418,7 +1418,7 @@ document.addEventListener('DOMContentLoaded',function(){
       <div class="lyrics-editor-empty" id="leadEditorEmpty">&#8592; Song ausw&#228;hlen</div>
       <textarea class="lyrics-textarea" id="leadTextarea" placeholder="Songabfolge eintragen, z.B.:&#10;&#10;Intro (4 Takte)&#10;Strophe 1&#10;Chorus&#10;Strophe 2&#10;Chorus&#10;Solo (8 Takte)&#10;Chorus x2&#10;Outro" style="display:none"></textarea>
       <div class="lyrics-editor-footer" id="leadEditorFooter" style="display:none">
-        <span class="lyrics-char-count" id="leadCharCount">0 Zeichen</span>
+        <span class="lyrics-char-count" id="leadCharCount" style="display:none"></span>
         <button class="btn primary" id="leadSaveBtn" onclick="saveLead()">&#10003; Speichern</button>
         <button class="btn reset" id="leadClearBtn" onclick="clearLead()">L&#246;schen</button>
       </div>
