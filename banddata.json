@@ -376,6 +376,21 @@
       "note": "Konzert",
       "title": "Blame It On Frank – Bitburg Bedagarten",
       "songs": []
+    },
+    {
+      "id": "ev_1780471162613",
+      "date": "2026-06-05",
+      "time": "17:00",
+      "dur": 180,
+      "loc": "Bitburg",
+      "note": "Probe",
+      "title": "Blame It On Frank – Bitburg",
+      "songs": [
+        9,
+        11,
+        3,
+        1
+      ]
     }
   ]
 }
