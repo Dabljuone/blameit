@@ -17,7 +17,30 @@
 <title>BlameIt &#8211; Terminplaner</title>
 <script>
 if ('serviceWorker' in navigator) {
-  var swCode = 'self.addEventListener(\'install\',function(e){self.skipWaiting();});';
+  // Service worker that caches the page itself for offline use.
+  // Uses the page's own URL so it works on GitHub Pages.
+  var swCode = [
+    "var CACHE='blameit-v1';",
+    "var PAGE=self.registration.scope;",
+    "self.addEventListener('install',function(e){",
+    "  self.skipWaiting();",
+    "  e.waitUntil(caches.open(CACHE).then(function(c){return c.add(PAGE);}));",
+    "});",
+    "self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});",
+    "self.addEventListener('fetch',function(e){",
+    "  var url=e.request.url;",
+    // Never cache GitHub API/raw calls (cloud data must be fresh)
+    "  if(url.indexOf('api.github.com')!==-1||url.indexOf('githubusercontent')!==-1){return;}",
+    "  e.respondWith(",
+    "    fetch(e.request).then(function(resp){",
+    "      if(e.request.method==='GET'&&resp&&resp.status===200){",
+    "        var copy=resp.clone();caches.open(CACHE).then(function(c){c.put(e.request,copy);});",
+    "      }",
+    "      return resp;",
+    "    }).catch(function(){return caches.match(e.request).then(function(r){return r||caches.match(PAGE);});})",
+    "  );",
+    "});"
+  ].join('\n');
   var blob = new Blob([swCode], {type:'application/javascript'});
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
 }
@@ -606,6 +629,11 @@ function applyCloudData(rec) {
 }
 
 function syncFromCloud() {
+  // Offline? Use local data, don't try to fetch
+  if (!navigator.onLine) {
+    setSyncStatus('err', 'Offline \u2013 lokale Daten werden verwendet');
+    return;
+  }
   setSyncStatus('loading', 'Synchronisiere...');
   // Read banddata.json from GitHub (public, no auth needed)
   var url = 'https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/' + GITHUB_FILE + '?t=' + Date.now();
