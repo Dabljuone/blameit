@@ -249,6 +249,15 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .home-empty{text-align:center;padding:3rem 1rem;color:#aaa}
   .home-empty-icon{font-size:48px;margin-bottom:12px}
   .home-add-hint{background:#e8f4fd;border-radius:8px;padding:10px 14px;font-size:13px;color:#555;margin-top:8px;text-align:center}
+
+  /* Floating Refresh Button */
+  .fab-refresh{position:fixed;bottom:20px;right:20px;z-index:8000;background:#378ADD;color:#fff;border:none;border-radius:50%;width:56px;height:56px;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:transform .15s,background .15s}
+  .fab-refresh:hover{background:#2a6cb0;transform:scale(1.05)}
+  .fab-refresh:active{transform:scale(.92)}
+  .fab-refresh.spinning{animation:fabspin 0.8s linear infinite}
+  @keyframes fabspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  .fab-refresh.ok{background:#4CAF50}
+  .fab-refresh.err{background:#e53935}
 </style>
 </head>
 <body>
@@ -591,6 +600,25 @@ function setSyncStatus(state, msg) {
   var dot=document.getElementById('syncDot'), lbl=document.getElementById('syncLabel');
   if (dot) dot.className='sync-dot'+(state==='ok'?' ok':state==='err'?' err':' loading');
   if (lbl) lbl.textContent = msg;
+  // Update floating button
+  var fab=document.getElementById('fabRefresh');
+  if(fab){
+    fab.classList.remove('spinning','ok','err');
+    if(state==='loading') fab.classList.add('spinning');
+    else if(state==='ok'){ fab.classList.add('ok'); setTimeout(function(){fab.classList.remove('ok');},1500); }
+    else if(state==='err'){ fab.classList.add('err'); setTimeout(function(){fab.classList.remove('err');},2000); }
+  }
+}
+
+function manualRefresh() {
+  syncFromCloud();
+  // Refresh whichever page is currently active
+  setTimeout(function(){
+    if(document.getElementById('pageHome').classList.contains('active')) renderHomePage();
+    if(document.getElementById('pageLyrics').classList.contains('active')) renderLyricsPage();
+    if(document.getElementById('pageLead').classList.contains('active')) renderLeadPage();
+    if(document.getElementById('pageSettings').classList.contains('active')) renderSettingsPage();
+  }, 1200);
 }
 
 function buildPayload() {
@@ -1507,5 +1535,6 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
+<button class="fab-refresh" id="fabRefresh" onclick="manualRefresh()" title="Daten aktualisieren">&#8635;</button>
 </body>
 </html>
