@@ -162,8 +162,8 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
 @media(max-width:500px){.form-row{grid-template-columns:1fr}.setlist-table th:nth-child(1),.setlist-table td:nth-child(1){display:none}}
 
   /* SONGTEXTE - Split Layout */
-  .lyrics-layout{display:flex;gap:0;height:calc(100vh - 105px);min-height:400px}
-  .lyrics-songlist{width:220px;flex-shrink:0;border-right:1px solid #e0e0e0;overflow-y:auto;background:#fff}
+  .lyrics-layout{display:flex;gap:0;height:calc(100dvh - 105px);min-height:300px;max-height:calc(100dvh - 105px)}
+  .lyrics-songlist{width:clamp(160px,22vw,240px);flex-shrink:0;border-right:1px solid #e0e0e0;overflow-y:auto;background:#fff}
   .lyrics-song-item{padding:10px 14px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .12s;position:relative}
   .lyrics-song-item:hover{background:#f0f7ff}
   .lyrics-song-item.active{background:#e8f1fb;border-left:3px solid #378ADD}
@@ -197,11 +197,11 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .fs-exit{position:fixed;top:12px;right:12px;z-index:10000;background:rgba(0,0,0,.6);border:1px solid #666;color:#fff;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;display:none}
   .lyrics-editor.fullscreen .fs-exit{display:block}
   .teleprompter:active{cursor:grabbing}
-  .teleprompter-inner{padding:50vh 28px 60vh 28px;font-size:22px;line-height:1.8;color:#fff;font-family:Arial,sans-serif;white-space:pre-wrap;word-break:break-word;text-align:center}
+  .teleprompter-inner{padding:50vh clamp(12px,4vw,40px) 60vh clamp(12px,4vw,40px);font-size:clamp(15px,2.2vw,22px);line-height:1.7;color:#fff;font-family:Arial,sans-serif;white-space:pre-wrap;word-break:break-word;text-align:center}
   .teleprompter-fade{position:sticky;bottom:0;left:0;right:0;height:70px;background:linear-gradient(transparent,#111);pointer-events:none;margin-top:-70px}
   .teleprompter-fade-top{position:sticky;top:0;left:0;right:0;height:50px;background:linear-gradient(#111,transparent);pointer-events:none;margin-bottom:-50px;z-index:1}
   /* Edit mode */
-  .lyrics-textarea{flex:1;width:100%;border:none;padding:16px 20px;font-size:14px;font-family:'Courier New',monospace;line-height:1.7;resize:none;background:#1a1a1a;color:#ddd;outline:none}
+  .lyrics-textarea{flex:1;width:100%;border:none;padding:clamp(10px,2vw,20px);font-size:clamp(13px,1.8vw,16px);font-family:'Courier New',monospace;line-height:1.7;resize:none;background:#1a1a1a;color:#ddd;outline:none}
   .lyrics-textarea:focus{background:#1e1e1e}
   .lyrics-editor-footer{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid #2a2a2a;background:#1a1a2e;flex-shrink:0}
   .lyrics-char-count{font-size:11px;color:#aaa;flex:1}
@@ -211,11 +211,11 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .speed-row{display:flex;align-items:center;gap:6px}
   .speed-label{font-size:11px;color:#888}
   .speed-inp{width:44px;background:#2a2a3a;border:1px solid #444;border-radius:5px;padding:3px 5px;font-size:12px;color:#fff;font-family:Arial,sans-serif;text-align:center}
-  @media(max-width:500px){
-    .lyrics-layout{flex-direction:column;height:auto}
-    .lyrics-songlist{width:100%;height:160px;border-right:none;border-bottom:1px solid #333}
-    .lyrics-editor{min-height:380px}
-    .teleprompter-inner{font-size:18px}
+  @media(max-width:600px){
+    .lyrics-layout{flex-direction:column;height:calc(100dvh - 105px)}
+    .lyrics-songlist{width:100%;height:30%;min-height:120px;border-right:none;border-bottom:1px solid #333}
+    .lyrics-editor{flex:1;min-height:0}
+    .teleprompter-inner{font-size:clamp(16px,5vw,22px)}
   }
 
   /* ADMIN */
