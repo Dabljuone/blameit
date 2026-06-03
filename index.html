@@ -221,7 +221,7 @@ hr{border:none;border-top:1px solid #ddd;margin:1.2rem 0 0}
   .event-countdown{display:inline-block;background:#e8f4fd;color:#378ADD;font-size:11px;font-weight:600;border-radius:10px;padding:2px 8px;margin-top:6px}
   .event-countdown.soon{background:#fff3cd;color:#856404}
   .event-countdown.today{background:#d4edda;color:#155724}
-  .event-del-btn{background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;padding:8px;align-self:flex-start}
+  .event-del-btn{background:#fff0f0;border:1px solid #fcc;border-radius:8px;color:#e53935;font-size:18px;cursor:pointer;padding:8px 12px;align-self:center;margin:8px}
   .event-del-btn:hover{color:#e53935}
   .home-empty{text-align:center;padding:3rem 1rem;color:#aaa}
   .home-empty-icon{font-size:48px;margin-bottom:12px}
@@ -770,7 +770,12 @@ function renderHomePage() {
     }
     if (ev.songs && ev.songs.length) {
       var sEl = document.createElement('div'); sEl.className='event-detail';
-      sEl.innerHTML = '&#127925; ' + ev.songs.length + ' Songs';
+      sEl.style.alignItems = 'flex-start';
+      var titles = ev.songs.map(function(n){
+        var so = songs.filter(function(x){return x.n===n;})[0];
+        return so ? so.t : null;
+      }).filter(Boolean);
+      sEl.innerHTML = '&#127925; <span style="flex:1">' + (titles.length ? titles.join(', ') : ev.songs.length + ' Songs') + '</span>';
       body.appendChild(sEl);
     }
     if (ev.note) {
@@ -794,8 +799,10 @@ function renderHomePage() {
     // Delete button (admin only)
     if (isAdmin) {
       var del = document.createElement('button');
-      del.className = 'event-del-btn'; del.innerHTML = '&#10005;';
-      (function(id){ del.addEventListener('click', function(){ deleteEvent(id); }); })(ev.id);
+      del.className = 'event-del-btn';
+      del.innerHTML = '&#128465;';
+      del.title = 'Termin l\u00f6schen';
+      (function(id){ del.addEventListener('click', function(e){ e.stopPropagation(); deleteEvent(id); }); })(ev.id);
       card.appendChild(del);
     }
 
