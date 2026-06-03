@@ -288,6 +288,7 @@ window.addEventListener("appinstalled",function(){
   <button class="nav-btn" id="navSetlist" onclick="showPage('setlist')">&#127926; Setliste</button>
   <button class="nav-btn" id="navSettings" onclick="showPage('settings')">&#9881; Einstellungen</button>
   <button class="nav-btn" id="navLyrics" onclick="showPage('lyrics')">&#127908; Songtexte</button>
+  <button class="nav-btn" id="navLead" onclick="showPage('lead')">&#127921; Leadsheet</button>
 </div>
 
 <!-- SEITE 0: UEBERSICHT -->
@@ -601,7 +602,9 @@ function buildPayload() {
       var f=localStorage.getItem('blameit_fine_'+s.n);   if(f) fine[s.n]=f;
     } catch(e){}
   });
-  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine, events:bandEvents };
+  var leads={};
+  songs.forEach(function(s){ try{ var ld=localStorage.getItem('blameit_lead_'+s.n); if(ld) leads[s.n]=ld; }catch(e){} });
+  return { songs:songs, bandName:bandName, lyrics:lyrics, bpm:bpm, fine:fine, events:bandEvents, leads:leads };
 }
 
 function applyCloudData(rec) {
@@ -624,6 +627,7 @@ function applyCloudData(rec) {
   if (rec.bpm)    Object.keys(rec.bpm).forEach(function(k){    try{localStorage.setItem('blameit_bpm_'+k,   rec.bpm[k]);}catch(e){} });
   if (rec.fine)   Object.keys(rec.fine).forEach(function(k){   try{localStorage.setItem('blameit_fine_'+k,  rec.fine[k]);}catch(e){} });
   if (rec.events) { bandEvents = rec.events; try{localStorage.setItem('blameit_events',JSON.stringify(bandEvents));}catch(e){} }
+  if (rec.leads) Object.keys(rec.leads).forEach(function(k){ try{localStorage.setItem('blameit_lead_'+k,rec.leads[k]);}catch(e){} });
   saveData(); updatePageTitle(); rebuildGrids();
   if (document.getElementById('pageHome') && document.getElementById('pageHome').classList.contains('active')) renderHomePage();
 }
@@ -869,13 +873,14 @@ function deleteEvent(id) {
 
 // ── NAVIGATION ──
 function showPage(page) {
-  ['Home','Termin','Setlist','Settings','Lyrics'].forEach(function(p) {
+  ['Home','Termin','Setlist','Settings','Lyrics','Lead'].forEach(function(p) {
     var pg=document.getElementById('page'+p); if(pg) pg.classList.toggle('active',p.toLowerCase()===page);
     var nv=document.getElementById('nav'+p);  if(nv) nv.classList.toggle('active',p.toLowerCase()===page);
   });
   if (page==='settings') renderSettingsPage();
   if (page==='lyrics') renderLyricsPage();
   if (page==='home') renderHomePage();
+  if (page==='lead') renderLeadPage();
 }
 
 function pad(n){ return String(n).padStart(2,'0'); }
@@ -1360,6 +1365,146 @@ document.addEventListener('DOMContentLoaded',function(){
   var tele=document.getElementById('teleprompter');
   if(tele){tele.addEventListener('scroll',function(){if(!scrollRunning)scrollPos=tele.scrollTop;});tele.addEventListener('touchstart',function(){if(scrollRunning)stopScroll();},{passive:true});}
 });
+</script>
+
+<!-- SEITE 5: LEADSHEET -->
+<div class="page" id="pageLead">
+  <h1>&#127921; Leadsheet</h1>
+  <p class="subtitle">Song ausw&#228;hlen, dann die Songabfolge / Struktur eintragen (z.B. Intro, Strophe, Chorus...).</p>
+  <div class="lyrics-layout">
+    <div class="lyrics-songlist" id="leadSongList"></div>
+    <div class="lyrics-editor" id="leadEditor"><button class="fs-exit" onclick="toggleLeadFullscreen()">&#10005; Vollbild beenden</button>
+      <div class="lyrics-editor-header" id="leadEditorHeader" style="display:none">
+        <div style="flex:1;min-width:0">
+          <div class="lyrics-editor-title" id="leadEditorTitle"></div>
+          <div class="lyrics-editor-sub" id="leadEditorSub"></div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="fs-btn" id="leadFontMinus" onclick="changeLeadFontSize(-2)" title="Kleiner">&#8722;</button>
+          <button class="fs-btn" id="leadFontPlus" onclick="changeLeadFontSize(2)" title="Gr&#246;&#223;er">+</button>
+          <button class="mode-btn active" id="btnLeadEdit" onclick="setLeadMode('edit')">Bearbeiten</button>
+          <button class="mode-btn" id="btnLeadView" onclick="setLeadMode('view')">Ansicht</button>
+          <button class="fs-btn" id="leadFsBtn" onclick="toggleLeadFullscreen()" title="Vollbild">&#9974;</button>
+        </div>
+      </div>
+      <div class="lyrics-editor-empty" id="leadEditorEmpty">&#8592; Song ausw&#228;hlen</div>
+      <textarea class="lyrics-textarea" id="leadTextarea" placeholder="Songabfolge eintragen, z.B.:&#10;&#10;Intro (4 Takte)&#10;Strophe 1&#10;Chorus&#10;Strophe 2&#10;Chorus&#10;Solo (8 Takte)&#10;Chorus x2&#10;Outro" style="display:none"></textarea>
+      <div class="lyrics-editor-footer" id="leadEditorFooter" style="display:none">
+        <span class="lyrics-char-count" id="leadCharCount">0 Zeichen</span>
+        <button class="btn primary" id="leadSaveBtn" onclick="saveLead()">&#10003; Speichern</button>
+        <button class="btn reset" id="leadClearBtn" onclick="clearLead()">L&#246;schen</button>
+      </div>
+      <div class="teleprompter" id="leadView" style="display:none">
+        <div class="teleprompter-fade-top"></div>
+        <div class="teleprompter-inner" id="leadViewInner"></div>
+        <div class="teleprompter-fade"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ── LEADSHEET ──
+var currentLeadSongN = null;
+var leadMode = 'edit';
+var leadFontSize = 22;
+
+function renderLeadPage() {
+  var list=document.getElementById('leadSongList'); if(!list)return;
+  list.innerHTML='';
+  if(!songs.length){list.innerHTML='<p style="color:#aaa;font-size:13px;padding:12px">Keine Songs.</p>';return;}
+  songs.forEach(function(s){
+    var item=document.createElement('div');
+    item.className='lyrics-song-item'+(getLead(s.n)?' has-text':'')+(currentLeadSongN===s.n?' active':'');
+    item.id='lead-lsi-'+s.n;
+    var num=document.createElement('div');num.className='lsi-num';num.textContent='#'+s.n;
+    var title=document.createElement('div');title.className='lsi-title';title.textContent=s.t;
+    var artist=document.createElement('div');artist.className='lsi-artist';artist.textContent=s.a;
+    item.appendChild(num);item.appendChild(title);item.appendChild(artist);
+    (function(sn){item.addEventListener('click',function(){openLeadEditor(sn);});})(s.n);
+    list.appendChild(item);
+  });
+  if(currentLeadSongN!==null)openLeadEditor(currentLeadSongN);
+}
+
+function getLead(n){try{return localStorage.getItem('blameit_lead_'+n)||'';}catch(e){return '';}}
+function saveLeadData(n,text){try{localStorage.setItem('blameit_lead_'+n,text);}catch(e){}}
+
+function openLeadEditor(n){
+  currentLeadSongN=n;
+  var s=songs.filter(function(x){return x.n===n;})[0]; if(!s)return;
+  document.querySelectorAll('#leadSongList .lyrics-song-item').forEach(function(el){el.classList.remove('active');});
+  var item=document.getElementById('lead-lsi-'+n); if(item)item.classList.add('active');
+  document.getElementById('leadEditorHeader').style.display='flex';
+  document.getElementById('leadEditorTitle').textContent=s.t;
+  document.getElementById('leadEditorSub').textContent=s.a;
+  document.getElementById('leadEditorEmpty').style.display='none';
+  setLeadMode(leadMode);
+}
+
+function setLeadMode(mode){
+  leadMode=mode; var isEdit=mode==='edit';
+  loadLeadFontSize();
+  document.getElementById('btnLeadEdit').classList.toggle('active',isEdit);
+  document.getElementById('btnLeadView').classList.toggle('active',!isEdit);
+  document.getElementById('leadTextarea').style.display=isEdit?'block':'none';
+  document.getElementById('leadEditorFooter').style.display=isEdit?'flex':'none';
+  document.getElementById('leadView').style.display=isEdit?'none':'block';
+  if(isEdit){
+    var ta=document.getElementById('leadTextarea');
+    ta.value=getLead(currentLeadSongN);
+    ta.readOnly=false; ta.style.color='';
+    var saveBtn=document.getElementById('leadSaveBtn'),clearBtn=document.getElementById('leadClearBtn');
+    if(saveBtn)saveBtn.style.display='inline-flex';
+    if(clearBtn)clearBtn.style.display='inline-flex';
+    updateLeadCount(); ta.focus();
+  } else {
+    var text=getLead(currentLeadSongN)||'(Keine Songabfolge eingetragen)';
+    document.getElementById('leadViewInner').textContent=text;
+    var v=document.getElementById('leadView'); if(v)v.scrollTop=0;
+  }
+}
+
+function saveLead(){
+  if(currentLeadSongN===null)return;
+  var text=document.getElementById('leadTextarea').value;
+  saveLeadData(currentLeadSongN,text);
+  var item=document.getElementById('lead-lsi-'+currentLeadSongN);
+  if(item){if(text.trim())item.classList.add('has-text');else item.classList.remove('has-text');}
+  pushToCloud(); showToast('Leadsheet gespeichert!');
+}
+function clearLead(){
+  if(currentLeadSongN===null)return;
+  if(!confirm('Leadsheet wirklich l\u00f6schen?'))return;
+  saveLeadData(currentLeadSongN,'');
+  document.getElementById('leadTextarea').value='';
+  var item=document.getElementById('lead-lsi-'+currentLeadSongN); if(item)item.classList.remove('has-text');
+  updateLeadCount(); showToast('Gel\u00f6scht.');
+}
+function updateLeadCount(){var ta=document.getElementById('leadTextarea'),cc=document.getElementById('leadCharCount');if(ta&&cc)cc.textContent=ta.value.length+' Zeichen';}
+
+function changeLeadFontSize(delta){
+  leadFontSize+=delta; if(leadFontSize<12)leadFontSize=12; if(leadFontSize>60)leadFontSize=60;
+  var v=document.getElementById('leadViewInner'); if(v)v.style.fontSize=leadFontSize+'px';
+  var ta=document.getElementById('leadTextarea'); if(ta)ta.style.fontSize=leadFontSize+'px';
+  try{localStorage.setItem('blameit_lead_fontsize',leadFontSize);}catch(e){}
+}
+function loadLeadFontSize(){
+  try{var f=parseInt(localStorage.getItem('blameit_lead_fontsize'));if(f)leadFontSize=f;}catch(e){}
+  var v=document.getElementById('leadViewInner'); if(v)v.style.fontSize=leadFontSize+'px';
+  var ta=document.getElementById('leadTextarea'); if(ta)ta.style.fontSize=leadFontSize+'px';
+}
+function toggleLeadFullscreen(){
+  var editor=document.getElementById('leadEditor');
+  editor.classList.toggle('fullscreen');
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var ta=document.getElementById('leadTextarea');
+  if(ta)ta.addEventListener('input',updateLeadCount);
+});
+
 </script>
 
 </body>
