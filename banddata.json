@@ -143,7 +143,7 @@
     },
     {
       "n": 11,
-      "t": "Marselle",
+      "t": "Marseille",
       "a": "Hattler",
       "instr": [
         "Drums",
@@ -356,61 +356,5 @@
     "18": "0.4",
     "21": "1.1",
     "22": "0.4"
-  },
-  "events": [
-    {
-      "id": "ev_1780471014723",
-      "date": "2026-07-18",
-      "time": "19:00",
-      "dur": 90,
-      "loc": "Irrel Weinhaus",
-      "note": "Konzert",
-      "title": "Blame It On Frank – Irrel Weinhaus",
-      "songs": []
-    },
-    {
-      "id": "ev_1780471061871",
-      "date": "2026-08-12",
-      "time": "19:00",
-      "dur": 90,
-      "loc": "Bitburg Bedagarten",
-      "note": "Konzert",
-      "title": "Blame It On Frank – Bitburg Bedagarten",
-      "songs": []
-    },
-    {
-      "id": "ev_1780471162613",
-      "date": "2026-06-05",
-      "time": "17:00",
-      "dur": 180,
-      "loc": "Bitburg",
-      "note": "Probe",
-      "title": "Blame It On Frank – Bitburg",
-      "songs": [
-        9,
-        11,
-        3,
-        1
-      ]
-    },
-    {
-      "id": "ev_1780472063819",
-      "date": "2026-10-17",
-      "time": "19:00",
-      "dur": 90,
-      "loc": "Malberg Schloss",
-      "note": "Konzert",
-      "title": "Blame It On Frank – Malberg Schloss",
-      "songs": []
-    }
-  ],
-  "leads": {
-    "1": "\n\nIntro 8 Takte\nStrophe 1",
-    "2": "Intro (frei) Gitarre"
-  },
-  "lyricsdate": {},
-  "leaddate": {
-    "1": "3.6.2026",
-    "2": "3.6.2026"
   }
 }
